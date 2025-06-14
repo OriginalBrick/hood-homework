@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#SBATCH --job-name=HFM_index
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=ld15@hood.edu
+#SBATCH --nodes=1
+#SBATCH --ntasks=8
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=10G
+
+cd /BIODATA/LishengData
+mkdir HFM_index
+cd HFM_index
+source activate hisat2
+
+# Download human GRCh38 reference
+wget ftp://ftp.ensembl.org/pub/release-84/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+gzip -d Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+mv Homo_sapiens.GRCh38.dna.primary_assembly.fa genome.fa
+
+# Build HFM index
+# It takes about 20 minutes(depend on HW spec) to build index,
+# and requires at least 6GB memory.
+hisat2-build -p 16 genome.fa genome &> hisat2_HFM_index_outputLog.txt

@@ -1,0 +1,41 @@
+#FYI The following commands are strait from the script that I previously gave you just after the header.
+
+#Getting on the compute node for interactive session (SLURM)
+-bash-4.2$ srun --pty bash
+ 
+#Change directory to the test output directory
+(base) bash-4.2$ cd /BIODATA/mouseDataForSplicingProject/starOutput/test
+
+# All our Hood bio data is on the BIODATA directory
+
+#Launch conda on the compute node
+(base) bash-4.2$ conda init bash
+
+#Output from the above command
+#no change     /root/anaconda3/condabin/conda
+#no change     /root/anaconda3/bin/conda
+#no change     /root/anaconda3/bin/conda-env
+#no change     /root/anaconda3/bin/activate
+#no change     /root/anaconda3/bin/deactivate
+#no change     /root/anaconda3/etc/profile.d/conda.sh
+#no change     /root/anaconda3/etc/fish/conf.d/conda.fish
+#no change     /root/anaconda3/shell/condabin/Conda.psm1
+#no change     /root/anaconda3/shell/condabin/conda-hook.ps1
+#no change     /root/anaconda3/lib/python3.7/site-packages/xontrib/conda.xsh
+#no change     /root/anaconda3/etc/profile.d/conda.csh
+#no change     /home/darby/.bashrc
+#No action taken.
+
+#Activate the desired environment
+(base) bash-4.2$ source activate star
+
+#Run whatever commands you want
+#Remember to use nohup before your commands so that they do not end if your connection breaks
+
+#Close the conda environment
+(star) bash-4.2$ conda deactivate
+
+#Exit the compute node back to the head node (SLURM)
+(base) bash-4.2$ exit
+
+mv raw_seq input

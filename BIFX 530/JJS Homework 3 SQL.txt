@@ -1,0 +1,52 @@
+Drop table if exists Student_major;
+Drop table if exists Member_of;
+Drop table if exists Event;
+Drop table if exists Organization;
+Drop table if exists Faculty_advisor;
+Drop table if exists Student;
+
+create table Student(
+student_id int(10),
+student_name varchar(50),
+email_address varchar(50),
+primary key(student_id));
+
+create table Faculty_advisor(
+faculty_id int(10),
+faculty_name varchar(50),
+phone_number int(10),
+email_address varchar(50),
+primary key(faculty_id));
+
+create table Organization(
+name varchar(50),
+description varchar(500),
+type varchar(10),
+faculty_id int(10) NOT NULL,
+primary key(name),
+foreign key(faculty_id) references Faculty_advisor(faculty_id));
+
+create table Event(
+name varchar(50) NOT NULL,
+event_name varchar(50),
+date date,
+description varchar(500),
+location varchar(50),
+student_id int(10),
+primary key(name, event_name, date),
+foreign key(student_id) references Student(student_id),
+foreign key(name) references Organization(name) ON DELETE CASCADE);
+
+create table Student_major(
+student_id int(10),
+major varchar(50),
+primary key(student_id, major),
+foreign key(student_id) references Students(student_id));
+
+create table Member_of(
+student_id int(10),
+name varchar(50),
+date date,
+primary key(student_id, name),
+foreign key(student_id) references Student(student_id),
+foreign key(name) references Organization(name));

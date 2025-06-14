@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<!--
+Font-awesome icons ie github or twitter
+-->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/brands.css" integrity="sha384-n9+6/aSqa9lBidZMRCQHTHKJscPq6NW4pCQBiMmHdUCvPN8ZOg2zJJTkC7WIezWv" crossorigin="anonymous">
+
+<!--
+Google fonts api stuff
+-->
+
+
+
+<title>Analysis of WWII THOR Avation Mission Database</title>
+
+
+
+
+
+
+<style>
+@page {
+size: 48in 36in;
+margin: 0;
+padding: 0;
+}
+body {
+margin: 0;
+font-size: 45px;
+width: 48in;
+height: 36in;
+padding: 0;
+text-align: justify;
+font-family: Palatino;
+}
+.poster_wrap {
+width: 48in;
+height: 36in;
+padding: 0cm;
+}
+.title_container {
+width: 48in;
+height: calc(36in * 0.15);
+overflow: hidden;
+background-color: #30608b;
+border: 0 solid #0b4545;
+}
+.logo_left {
+float: left;
+width: 10%;
+height: 100%;
+background-color: #30608b;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.logo_right {
+float: right;
+width: 10%;
+height: 100%;
+background-color: #30608b;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.poster_title {
+text-align: center;
+position: relative;
+float: left;
+width: 80%;
+height: 100%;
+color: #FFFFFF;
+top: 50%;
+transform: translateY(-50%);
+-webkit-transform: translateY(-50%);
+}
+#title {
+font-family: Palatino;
+}
+/* unvisited link */
+a:link {
+color: #cc0000;
+}
+.mybreak {
+  break-before: column;
+}
+/* visited link */
+a:visited {
+color: #cc0000;
+}
+
+/* mouse over link */
+a:hover {
+color: #cc0000;
+}
+
+/* selected link */
+a:active {
+color: #cc0000;
+}
+.poster_body {
+-webkit-column-count: 3; /* Chrome, Safari, Opera */
+-moz-column-count: 3; /* Firefox */
+column-count: 3;
+-webkit-column-fill: auto;
+-moz-column-fill: auto;
+column-fill: auto;
+-webkit-column-rule-width: 1mm;
+-moz-column-rule-width: 1mm;
+column-rule-width: 1mm;
+-webkit-column-rule-style: dashed;
+-moz-column-rule-style: dashed;
+column-rule-style: dashed;
+-webkit-column-rule-color: #30608b;
+-moz-column-rule-color: #30608b;
+column-rule-color: #30608b;
+column-gap: 1em;
+padding-left: 0.5em;
+padding-right: 0.5em;
+height: 100%;
+color: #000000
+background-color: #ffffff;
+}
+.poster_title h1 {
+font-size: 75pt;
+margin: 0;
+border: 0;
+font-weight: normal;
+}
+.poster_body_wrap{
+width: calc(48in + 0 + 0);
+height: calc(36in * 0.83);
+padding-top: calc(36in * 0.005);
+padding-bottom: calc(36in * 0.01);
+background-color: #ffffff;
+}
+.poster_title h3 {
+color: #ffffff;
+font-size: 50pt;
+margin: 0;
+border: 0;
+font-weight: normal;
+}
+.poster_title h3 > sup {
+  font-size: 35pt;
+  margin-left: 0.02em;
+}
+.poster_title h5 {
+color: #FFFFFF;
+font-size: 35pt;
+margin: 0;
+border: 0;
+font-weight: normal;
+}
+img {
+margin-top: 2cm;
+margin-bottom: 0;
+}
+.section {
+  padding: 0.2em;
+}
+.poster_body h1 {
+text-align: center;
+color: #FFFFFF;
+font-size: 65pt;
+border: 2mm solid #30608b;
+background-color: #30608b;
+border-radius: 4mm 0mm;
+margin-top: 2mm;
+margin-bottom: 2mm;
+font-weight: normal;
+}
+.poster_body h2 {
+color: #000000;
+font-size: 40pt;
+padding-left: 4mm;
+font-weight: normal;
+}
+.span {
+width: 200%;
+}
+/* center align leaflet map,
+from https://stackoverflow.com/questions/52112119/center-leaflet-in-a-rmarkdown-document */
+.html-widget {
+margin: auto;
+position: sticky;
+margin-top: 2cm;
+margin-bottom: 2cm;
+}
+.leaflet.html-widget.html-widget-static-bound.leaflet-container.leaflet-touch.leaflet-fade-anim.leaflet-grab.leaflet-touch-drag.leaflet-touch-zoom {
+position: sticky;
+width: 100%;
+}
+pre.sourceCode.r {
+background-color: #dddddd40;
+border-radius: 4mm;
+padding: 4mm;
+width: 75%;
+/* align-items: center; */
+margin: auto;
+padding-left: 2cm;
+}
+code.sourceCode.r{
+background-color: transparent;
+font-size: 20pt;
+border-radius: 2mm;
+}
+.caption {
+font-size: 25pt;
+}
+.table caption {
+font-size: 25pt;
+padding-bottom: 3mm;
+
+}
+code {
+font-size: 1em;
+font-family: monospace;
+background-color: #00808024;
+color: #30608b;
+padding: 1.2mm;
+border-radius: 2mm;
+}
+.poster_title code {
+font-size: 1em;
+}
+table {
+font-size: 40px;
+margin: auto;
+border-top: 3px solid #666;
+border-bottom: 3px solid #666;
+}
+table thead th {
+border-bottom: 3px solid #ddd;
+}
+td {
+padding: 8px;
+}
+th {
+padding: 15px;
+}
+caption {
+margin-bottom: 10px;
+}
+.poster_body p {
+margin-right: 4mm;
+margin-left: 4mm;
+margin-top: 6mm;
+margin-bottom: 10mm;
+}
+.poster_body ol {
+margin-right: 4mm;
+margin-left: 4mm;
+}
+#ul {
+margin-right: 4mm;
+margin-left: 4mm;
+}
+.references p {
+font-size: 20pt;
+}
+.orcid img {
+  width: 1em;
+}
+</style>
+</head>
+<body>
+
+
+<div class="poster_wrap">
+<div class="title_container">
+<!-- Left Logo  -->
+<div class="logo_left">
+<img src= '4C_Vertical.jpg' style="width: 80%">
+</div>
+<!-- Poster Title -->
+<div class= "poster_title">
+<h1 id="title">Analysis of WWII THOR Avation Mission Database</h1>
+<h3 id="author">J. Jedediah Smith<sup></sup></h3><br>
+<h5 id="affiliation"><sup></sup> BIFX 552 Data Visualization Project, Hood College</h5>
+</div>
+<!-- Right Logo  -->
+<div class="logo_right">
+</div>
+</div>
+
+<div class='poster_body_wrap'>
+<div class='poster_body'>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Theater History of Operations (THOR) is a database of aerial bombing data from World War I to Vietnam <span class="citation">(DoD 2016)</span>. It has been carefully constructed using digitized mission reports from US and allied air forces <span class="citation">(DoD 2016)</span>. Data from THOR has helped locate unexploded bombs in South East Asia and informed air force combat tactics <span class="citation">(DoD 2016)</span>. In this project, we will analyze the World War II subset of THOR and look at how the conflict progressed.</p>
+<div id="questions" class="section level2">
+<h2>Questions</h2>
+<ol style="list-style-type: decimal">
+<li>How do the number of missions and amount of bombs compare?</li>
+<li>Which Allied country did the most missions?</li>
+<li>When countries were hit hardest during the war?</li>
+<li>What regions did Allied bombers target the most?</li>
+</ol>
+</div>
+</div>
+<div id="methods" class="section level1">
+<h1>Methods</h1>
+<p>This project uses the basic <code>ggplot2</code> package to help visualize the answers to most of our questions. Geographic data was mapped using <code>mapview</code>. All data was regularly cleaned and passed using the <code>dplyr</code> and <code>tinyr</code> packages. This presented the most challenging part of the project. Various different placeholder values were used for unknown or missing data. The variations had to be individually identified and renamed. Approximately 5.15% of the data was omitted due to lacking geographic data. Additionally, an illusive non-Unicode character in one of the fields was causing problems with the map generation. However, this was overcome by simplifying the map and excluding the problematic column.</p>
+</div>
+<div id="results" class="section level1">
+<h1>Results</h1>
+<p>To help with our first question, we have Figure <a href="#fig:Twin-Plot">1</a>. As shown, the number of missions and amount of bombs dropped seem to trend in the same direction. Both dramatically increase around the beginning of 1942.</p>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:Twin-Plot"></span>
+<img src="THOR-Poster_files/figure-html/Twin-Plot-1.png" alt="Number of bomber missions flown and amount of bombs dropped by the Allied Powers over the course of the war in all theaters of battle." width="50%" /><img src="THOR-Poster_files/figure-html/Twin-Plot-2.png" alt="Number of bomber missions flown and amount of bombs dropped by the Allied Powers over the course of the war in all theaters of battle." width="50%" />
+<p class="caption">
+Figure 1: Number of bomber missions flown and amount of bombs dropped by the Allied Powers over the course of the war in all theaters of battle.
+</p>
+</div>
+<p>Our second question is aided by Figure <a href="#fig:By-Country-Plot">2</a>. As shown, the main country running missions early on is by Great Britain. This is later eclipsed by the United States. The unidentified category may represent joint missions, as it picks up where the Great Britain trend declines, and trends similar to the United States. However, there is no explanation for this on the website that hosts our dataset.</p>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:By-Country-Plot"></span>
+<img src="THOR-Poster_files/figure-html/By-Country-Plot-1.png" alt="Number of missions flown by each Allied country over the course of the war in all theaters of battle. Unidentified may represent joint missions." width="80%" />
+<p class="caption">
+Figure 2: Number of missions flown by each Allied country over the course of the war in all theaters of battle. Unidentified may represent joint missions.
+</p>
+</div>
+<p>Figure <a href="#fig:By-Theater-Plot">3</a> helps us out with our third question. As shown, the European Theater is hit the hardest, followed by the Mediterranean, Pacific, and the rest. Generally speaking, Europe can be seen as Germany, the Mediterranean and East Africa as Italy, and the Pacific and China as Japan. Actual targets can be found in the original data, but are difficult to work with. They use geographic names like Papua New Guinea or Corsica instead of the name of the nation that is occupying them.</p>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:By-Theater-Plot"></span>
+<img src="THOR-Poster_files/figure-html/By-Theater-Plot-1.png" alt="Amount of bombs dropped by the Allied Powers over the course of the war in each theater." width="80%" />
+<p class="caption">
+Figure 3: Amount of bombs dropped by the Allied Powers over the course of the war in each theater.
+</p>
+</div>
+<p>Our fourth question is explored with Figure <a href="#fig:Twin-Maps">4</a>. As shown, missions in Europe are concentrated along the northern coast of France and Germany, along with the western coast of Italy. Missions in the Pacific are concentrated in the southern half of Japan, the northern coast of Papua New Guinea, the Philippines, and Burma.</p>
+<div class="figure" style="text-align: center"><span style="display:block;" id="fig:Twin-Maps"></span>
+<img src="EuropeMap.png" alt="Distribution of Allied bomber missions during the war plotted on reginal maps map. Left image contains Europe and Mediterranean data. Right contains Pacific and China data." width="50%" /><img src="PacificMap.png" alt="Distribution of Allied bomber missions during the war plotted on reginal maps map. Left image contains Europe and Mediterranean data. Right contains Pacific and China data." width="50%" />
+<p class="caption">
+Figure 4: Distribution of Allied bomber missions during the war plotted on reginal maps map. Left image contains Europe and Mediterranean data. Right contains Pacific and China data.
+</p>
+</div>
+</div>
+<div id="conclusions" class="section level1">
+<h1>Conclusions</h1>
+<p>Our data here helps tell a broad story of World War II from the air. In Figure <a href="#fig:Twin-Plot">1</a>, we see that numbers start to trend upwards around 1942. This lines up with the entry of the United States into the war on 7 December 1941 after the Japanese attack on Pearl Harbor.</p>
+<p>Figure <a href="#fig:By-Country-Plot">2</a> confirms our previous assertion by breaking down who flew the most missions over the course of World War II: the United States. These numbers make sense, as the total aircraft production by the United States during the war was nearly triple that of Britain <span class="citation">(Zeitlin 1995)</span>.</p>
+<p>Figure <a href="#fig:By-Theater-Plot">3</a> show us that a far greater amount of bombs were dropped on Germany than Italy or Japan. Collectively, this indicates a focus in Europe rather than in Asia, which is the exactly policy decided upon by the Allies at the Arcadia Conference in early 1942 <span class="citation">(Bell 2022)</span>.</p>
+<p>Figure <a href="#fig:Twin-Maps">4</a> gives us an idea of the areas hit most frequently by Allied bombers. This loosely correlates with main fronts of the war, such as in France and the Philippines, as well as strategic bombing campaigns against the industrial heartlands of Japan and Germany.</p>
+<p>Although our data may be skewed a bit in favor if United States records and the European Theater, a flaw the data source itself acknowledges, it still does a decent job portraying an overview of the war.</p>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-R-GermanyFirst" class="csl-entry">
+Bell, Michael S. 2022. <em>First Washington Conference: ARCADIA</em>. The National WWII Museum. <a href="https://www.nationalww2museum.org/war/articles/first-washington-conference-arcadia">https://www.nationalww2museum.org/war/articles/first-washington-conference-arcadia</a>.
+</div>
+<div id="ref-R-THOR" class="csl-entry">
+DoD, Defense Digitial Service. 2016. <em>THOR: World War II THOR Data</em>. data.world. <a href="https://data.world/datamil/world-war-ii-thor-data">https://data.world/datamil/world-war-ii-thor-data</a>.
+</div>
+<div id="ref-R-AirProd" class="csl-entry">
+Zeitlin, Jonathan. 1995. <em>Flexibility and Mass Production at War: Aircraft Manufacture in Britain, the United States, and Germany, 1939-1945</em>. Johns Hopkins University Press. <a href="https://www.jstor.org/stable/3106341">https://www.jstor.org/stable/3106341</a>.
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+
+
+</body>
+</html>

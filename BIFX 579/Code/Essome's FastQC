@@ -1,0 +1,275 @@
+#!/bin/bash
+
+#SBATCH --nodes=1                              # --node this allows the user to request a specific host to run the job.
+#SBATCH --time=07:05:00                        # --time	parameter set the total	time limit the job is allowed to run.
+#SBATCH --partition=debug		               # --pertition parameter request a particuar partition for the resource allocation. 
+#SBATCH --ntasks-per-node=6                    # --n-tasks-per-node this specifies the number of task requested per node.
+#SBATCH --job-name=FasqcScript                 # --job-name parameter is for giving name to the job. 
+#SBATCH --output=fastqc_status_update.%j.out   # --ouput parameter is used to define the file which output of the job must be directed to.
+
+# This script will run fastqc on the sample data
+# in order to assess the read quality and put the output 
+# in the directory that are specified for the file type.
+# This workflow is well accepted in the bioinformatics 
+# community because the output of one tool can easily be
+# used as an input for another tool without any immense 
+# configurations. The fastqc results will be moved to the
+# specified directories after the fastqc program finishes 
+#running on each sample.
+
+
+########### Running Fastqc on Sample_1_WT1_27081 #####################
+
+# The flag (-e) ensures that our script will exit if an error occurs
+# it is generally wise to add it at the beginning of your
+# scripts
+
+set -e
+
+# This command will move me into the rawReads directory
+# when I run this script.
+
+cd /BIODATA/mouseDataForSplicingProject/mouseFastqs/Sample_1_WT1_27081
+
+# This line of code gives me status update message telling
+# me that FastQC is currently running in the specified
+# directory.
+
+echo "Running FastQC on Sample_1_WT1_27081..."
+
+# This is the actual command that runs fastqc on the files
+# with extention .fastq.gz
+
+fastqc *.fastq.gz
+
+# Once again we we get the status update message that the
+# results are being saved to the specified directories.
+
+echo "Saving FastQC results..."
+
+mv *.zip /home/em24/MbuCapstone/rawFastqc/
+mv *.html /home/em24/MbuCapstone/fasqcHtml/
+
+# remove the annoying question mark directory.
+rm -R ?
+
+
+########### Running Fastqc on Sample_2_WT2_27104 #####################
+
+# The flag (-e) ensures that our script will exit if an error occurs
+# it is generally wise to add it a the beginning of your
+# scripts
+
+set -e
+
+# This command will move me into the rawReads directory
+# when I run this script.
+
+cd /BIODATA/mouseDataForSplicingProject/mouseFastqs/Sample_2_WT2_27104
+
+# This line of code gives me status update message telling
+# me that FastQC is currently running in the specified
+# directory.
+
+echo "Running FastQC on Sample_2_WT2_27104..."
+
+# This is the actual command that runs fastqc on the files
+# with extention .fastq.gz
+
+fastqc *.fastq.gz
+
+# Once again we we get the status update message that the
+# results are being saved to the specified directories.
+
+echo "Saving FastQC results..."
+
+mv *.zip /home/em24/MbuCapstone/rawFastqc/
+mv *.html /home/em24/MbuCapstone/fasqcHtml/
+
+# remove the annoying question mark directory.
+rm -R ?
+
+
+
+########### Running Fastqc on/Sample_4_WT4_27209 #####################
+
+# The flag (-e) ensures that our script will exit if an error occurs
+# it is generally wise to add it a the beginning of your
+# scripts
+
+set -e
+
+# This command will move me into the rawReads directory
+# when I run this script.
+
+cd /BIODATA/mouseDataForSplicingProject/mouseFastqs/Sample_4_WT4_27209
+
+# This line of code gives me status update message telling
+# me that FastQC is currently running in the specified
+# directory.
+
+echo "Running FastQC on Sample_4_WT4_27209..."
+
+# This is the actual command that runs fastqc on the files
+# with extention .fastq.gz
+
+fastqc *.fastq.gz
+
+# Once again we we get the status update message that the
+# results are being saved to the specified directories.
+
+echo "Saving FastQC results..."
+
+mv *.zip /home/em24/MbuCapstone/rawFastqc/
+mv *.html /home/em24/MbuCapstone/fasqcHtml/
+
+# remove the annoying question mark directory.
+rm -R ?
+
+
+########### Running Fastqc on Sample_5_WT5_27218 #####################
+
+# The flag (-e) ensures that our script will exit if an error occurs
+# it is generally wise to add it a the beginning of your
+# scripts
+
+set -e
+
+# This command will move me into the rawReads directory
+# when I run this script.
+
+cd /BIODATA/mouseDataForSplicingProject/mouseFastqs/Sample_5_WT5_27218
+
+# This line of code gives me status update message telling
+# me that FastQC is currently running in the specified
+# directory.
+
+echo "Running FastQC on Sample_5_WT5_27218..."
+
+# This is the actual command that runs fastqc on the files
+# with extention .fastq.gz
+
+fastqc *.fastq.gz
+
+# Once again we we get the status update message that the
+# results are being saved to the specified directories.
+
+echo "Saving FastQC results..."
+
+mv *.zip /home/em24/MbuCapstone/rawFastqc/
+mv *.html /home/em24/MbuCapstone/fasqcHtml/
+
+# remove the annoying question mark directory.
+rm -R ?
+
+
+
+########### Running Fastqc on Sample_11_WT_HFD_126676 #####################
+
+# The flag (-e) ensures that our script will exit if an error occurs
+# it is generally wise to add it a the beginning of your
+# scripts
+
+set -e
+
+# This command will move me into the rawReads directory
+# when I run this script.
+
+cd /BIODATA/mouseDataForSplicingProject/mouseFastqs/Sample_11_WT_HFD_126676
+
+# line of code gives me status update message telling
+# me that FastQC is currently running in the specified
+# directory.
+
+echo "Running FastQC on Sample_11_WT_HFD_126676..."
+
+# This is the actual command that runs fastqc on the files
+# with extention .fastq.gz
+
+fastqc *.fastq.gz    
+
+# Once again we we get the status update message that the 
+# results are being saved to the specified directories.
+
+echo "Saving FastQC results..."
+
+mv *.zip /home/em24/MbuCapstone/rawFastqc/
+mv *.html /home/em24/MbuCapstone/fasqcHtml/
+
+# remove the annoying question mark directory.
+rm -R ?
+
+
+
+
+########### Running Fastqc on Sample_12_WT_HFD_226677 #####################
+
+# The flag (-e) ensures that our script will exit if an error occurs
+# it is generally wise to add it a the beginning of your
+# scripts
+
+set -e
+
+# This command will move me into the rawReads directory
+# when I run this script.
+
+cd /BIODATA/mouseDataForSplicingProject/mouseFastqs/Sample_12_WT_HFD_226677
+
+# This line of code gives me status update message telling
+# me that FastQC is currently running in the specified
+# directory.
+
+echo "Running FastQC on Sample_12_WT_HFD_226677..."
+
+# This is the actual command that runs fastqc on the files
+# with extention .fastq.gz
+
+fastqc *.fastq.gz
+
+# Once again we we get the status update message that the
+# results are being saved to the specified directories.
+
+echo "Saving FastQC results..."
+
+mv *.zip /home/em24/MbuCapstone/rawFastqc/
+mv *.html /home/em24/MbuCapstone/fasqcHtml/
+
+# remove the annoying question mark directory.
+rm -R ?
+
+
+########### Running Fastqc on Sample_13_WT_HFD_326678 #####################
+
+# The flag (-e) ensures that our script will exit if an error occurs
+# it is generally wise to add it a the beginning of your
+# scripts
+
+set -e
+
+# This command will move me into the rawReads directory
+# when I run this script.
+
+cd /BIODATA/mouseDataForSplicingProject/mouseFastqs/Sample_13_WT_HFD_326678
+
+
+# line of code gives me status update message telling
+# me that FastQC is currently running in the specified
+# directory.
+
+echo "Running FastQC on Sample_13_WT_HFD_326678..."
+
+# This is the actual command that runs fastqc on the files
+# with extention .fastq.gz
+
+fastqc *.fastq.gz
+
+# Once again we we get the status update message that the
+# results are being saved to the specified directories.
+
+echo "Saving FastQC results..."
+
+mv *.zip /home/em24/MbuCapstone/rawFastqc/
+mv *.html /home/em24/MbuCapstone/fasqcHtml/
+
+# remove the annoying question mark directory.
+rm -R ?

@@ -1,0 +1,26 @@
+<!DOCTYPE html> 
+<html> 
+    <head> 
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" /> 
+	<title>Admin Hub</title> 
+    </head> 
+    <body> 
+<div style = "width:30%; float:left"> 
+<?php include 'index.html'; ?> 
+</div>
+    <h2>Model Species Database: Admin Hub</h2> 
+    <p>Please select the function you wish to perform.</p> 
+    <form action="browse.php" method="post"> 
+        <input type="submit" value= "Browse all Accounts"/>
+    </form> 
+    <form action="insert_form.html" method="post"> 
+        <input type="submit" value= "Insert an Account"/>
+    </form> 
+    <form action="select_to_update.php" method="post"> 
+        <input type="submit" value= "Update an Account"/>
+    </form> 
+    <form action="delete_form.html" method="post"> 
+        <input type="submit" value= "Delete an Account"/>
+    </form>
+    </body> 
+</html>

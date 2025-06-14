@@ -1,0 +1,8 @@
+jjs14
+Welcome2Hood
+mysql -u jjs14 -p
+password
+use jjs14db;
+
+source /home/jjs14/file-name.sql;
+load data local infile '/home/jjs14/file-data.txt' into table emp fields terminated by ',';

@@ -1,0 +1,99 @@
+2.9	5945	5945	U	0	unclassified
+97.1	199198	0	R	1	root
+96.5	197953	0	-	131567	  cellular organisms
+95.92	196769	0	D	2	    Bacteria
+60.58	124278	0	-	1783272	      Terrabacteria group
+60.58	124278	0	P	1239	        Bacillota
+60.58	124278	500	C	91061	          Bacilli
+38.64	79262	0	O	1385	            Bacillales
+13.76	28229	0	F	186817	              Bacillaceae
+13.76	28229	0	G	1386	                Bacillus
+13.76	28229	0	-	653685	                  Bacillus subtilis group
+13.76	28229	14947	S	96241	                    Bacillus spizizenii
+6.47	13282	13282	S1	703612	                      Bacillus subtilis subsp. spizizenii ATCC 6633 = JCM 2499
+12.88	26427	0	F	90964	              Staphylococcaceae
+12.88	26427	0	G	1279	                Staphylococcus
+12.88	26427	26427	S	1280	                  Staphylococcus aureus
+11.99	24606	0	F	186820	              Listeriaceae
+11.99	24606	0	G	1637	                Listeria
+11.99	24606	24606	S	1639	                  Listeria monocytogenes
+21.7	44516	0	O	186826	            Lactobacillales
+13.02	26708	0	F	81852	              Enterococcaceae
+13.02	26708	0	G	1350	                Enterococcus
+13.02	26708	26708	S	1351	                  Enterococcus faecalis
+8.68	17808	0	F	33958	              Lactobacillaceae
+8.68	17808	0	G	2742598	                Limosilactobacillus
+8.68	17808	17808	S	1613	                  Limosilactobacillus fermentum
+35.34	72491	0	P	1224	      Pseudomonadota
+35.34	72491	0	C	1236	        Gammaproteobacteria
+23.04	47260	0	O	91347	          Enterobacterales
+23.04	47260	0	F	543	            Enterobacteriaceae
+11.74	24086	4	G	590	              Salmonella
+11.74	24082	24082	S	28901	                Salmonella enterica
+11.3	23174	0	G	561	              Escherichia
+11.3	23174	23174	S	562	                Escherichia coli
+12.3	25231	0	O	72274	          Pseudomonadales
+12.3	25231	0	F	135621	            Pseudomonadaceae
+12.3	25231	0	G	286	              Pseudomonas
+12.3	25231	0	-	136841	                Pseudomonas aeruginosa group
+12.3	25231	25231	S	287	                  Pseudomonas aeruginosa
+0.55	1134	45	D	2759	    Eukaryota
+0.53	1089	0	-	33154	      Opisthokonta
+0.52	1070	0	K	4751	        Fungi
+0.52	1070	0	-	451864	          Dikarya
+0.41	836	0	P	4890	            Ascomycota
+0.41	836	0	-	716545	              saccharomyceta
+0.41	836	0	-	147537	                Saccharomycotina
+0.41	836	0	C	4891	                  Saccharomycetes
+0.41	836	0	O	4892	                    Saccharomycetales
+0.41	836	0	F	4893	                      Saccharomycetaceae
+0.41	836	604	G	4930	                        Saccharomyces
+0.11	232	232	S	4932	                          Saccharomyces cerevisiae
+0.11	234	0	P	5204	            Basidiomycota
+0.11	234	0	-	5302	              Agaricomycotina
+0.11	234	0	C	155616	                Tremellomycetes
+0.11	234	0	O	5234	                  Tremellales
+0.11	234	0	F	1884633	                    Cryptococcaceae
+0.11	234	86	G	5206	                      Cryptococcus
+0.07	148	0	-	1897064	                        Cryptococcus neoformans species complex
+0.07	148	141	S	5207	                          Cryptococcus neoformans
+0.0	7	0	S1	40410	                            Cryptococcus neoformans var. neoformans
+0.0	5	5	S1	214684	                              Cryptococcus neoformans var. neoformans JEC21
+0.0	2	2	S1	283643	                              Cryptococcus neoformans var. neoformans B-3501A
+0.01	19	0	K	33208	        Metazoa
+0.01	19	0	-	6072	          Eumetazoa
+0.01	19	0	-	33213	            Bilateria
+0.01	19	0	-	33511	              Deuterostomia
+0.01	19	0	P	7711	                Chordata
+0.01	19	0	-	89593	                  Craniata
+0.01	19	0	-	7742	                    Vertebrata
+0.01	19	0	-	7776	                      Gnathostomata
+0.01	19	0	-	117570	                        Teleostomi
+0.01	19	0	-	117571	                          Euteleostomi
+0.01	19	0	-	8287	                            Sarcopterygii
+0.01	19	0	-	1338369	                              Dipnotetrapodomorpha
+0.01	19	0	-	32523	                                Tetrapoda
+0.01	19	0	-	32524	                                  Amniota
+0.01	19	0	C	40674	                                    Mammalia
+0.01	19	0	-	32525	                                      Theria
+0.01	19	0	-	9347	                                        Eutheria
+0.01	19	0	-	1437010	                                          Boreoeutheria
+0.01	19	0	-	314146	                                            Euarchontoglires
+0.01	19	0	O	9443	                                              Primates
+0.01	19	0	-	376913	                                                Haplorrhini
+0.01	19	0	-	314293	                                                  Simiiformes
+0.01	19	0	-	9526	                                                    Catarrhini
+0.01	19	0	-	314295	                                                      Hominoidea
+0.01	19	0	F	9604	                                                        Hominidae
+0.01	19	0	-	207598	                                                          Homininae
+0.01	19	19	G	9605	                                                            Homo
+0.02	50	0	D	2157	    Archaea
+0.02	50	0	P	28890	      Euryarchaeota
+0.02	50	0	-	2290931	        Stenosarchaea group
+0.02	50	0	C	183963	          Halobacteria
+0.02	50	0	O	1644055	            Haloferacales
+0.02	50	0	F	1644056	              Haloferacaceae
+0.02	50	50	G	2251	                Haloferax
+0.61	1245	0	-	2787854	  other entries
+0.61	1245	0	-	28384	    other sequences
+0.61	1245	1245	-	36549	      plasmids

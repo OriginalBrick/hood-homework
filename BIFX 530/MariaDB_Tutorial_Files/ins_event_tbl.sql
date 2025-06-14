@@ -1,0 +1,10 @@
+insert into event(name, date, type, remark) values ('Fluffy','1995-05-15','litter','4 kittens, 3 female, 1 male');
+insert into event(name, date, type, remark) values ('Buffy','1993-06-23','litter','5 puppies, 2 female, 3 male');
+insert into event(name, date, type, remark) values ('Buffy','1994-06-19','litter','3 puppies, 3 female');
+insert into event(name, date, type, remark) values ('Chirpy','1999-03-21','vet','needed beak straightened');
+insert into event(name, date, type, remark) values ('Slim','1997-08-03','vet','broken rib');
+insert into event(name, date, type) values ('Bowser','1991-10-12','kennel');
+insert into event(name, date, type) values ('Fang','1991-10-12','kennel');
+insert into event(name, date, type, remark) values ('Fang','1998-08-28','birthday','Gave him a new chew toy');
+insert into event(name, date, type, remark) values ('Claws','1998-03-17','birthday','Gave him a new flea collar');
+insert into event(name, date, type, remark) values ('Whistler','1998-12-09','birthday','First birthday');

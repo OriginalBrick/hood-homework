@@ -1,0 +1,335 @@
+---
+title: 'Homework: Analyzing Count Data'
+author: "J. Jedediah Smith"
+date: "2023-04-15"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+## Reviewing `SummarizedExperiment`
+
+The `SummarizedExperiment` data structure is commonly used to provide data for a related series of high-throughput experiments.
+
+One way to familiarize yourself with this data structure is to create a new one:
+
+```{r}
+set.seed(123)
+# Create a toy SummarizedExperiment object
+counts <- matrix(rnbinom(150, mu=50, size=10), nrow=15, ncol=10)
+rownames(counts) <- paste0("gene", 1:15)
+colnames(counts) <- paste0("sample", 1:10)
+col_data <- data.frame(condition=rep(c("A", "B"), each=5))
+row_data <- data.frame(symbol=paste0("gene", 1:15))
+```
+
+Let's take a look at these datastructures:
+
+```{r}
+knitr::kable(counts)
+```
+
+```{r}
+col_data
+```
+
+```{r}
+row_data
+```
+
+We are now ready to create a `SummarizedExperiment` object like so:
+
+```{r}
+library(SummarizedExperiment)
+se <- SummarizedExperiment(assays=list(counts=counts), colData=col_data, rowData=row_data)
+```
+
+## Retrieving Data
+
+We can retrieve the count data from `SummarizeExperiments` with function assays:
+
+```{r}
+knitr::kable(assays(se)[[1]])
+```
+
+Similarly, we can retrieve the column data and row-data with `colData` and `rowData` respectively:
+
+```{r}
+colData(se)
+```
+
+```{r}
+rowData(se)
+```
+
+## Using the 'Airway' RNA-Seq Data
+
+The airway package contains a dataset of gene expression values from a study of airway epithelial cells in response to glucocorticoid treatment. This dataset is based on RNA-Seq data and includes information on gene expression levels for thousands of genes across several experimental conditions.
+
+```{r}
+# BiocManager::install('airway')
+library(airway)
+data(airway)
+class(airway)
+```
+
+## Inspecting Read Match Count Data
+
+### Column Meta-Data
+
+```{r}
+colData(airway)
+```
+
+### Count Matrix
+
+```{r}
+counts <- assays(airway)$counts
+counts <- counts[1:30,] # no more than this many genes
+knitr::kable(counts)
+```
+
+## Our DIY Approach
+
+Before utilizing ready-made approaches for analyzing RNA-Seq data, we will use our own approach(es). This will help us understand what actually the challenge is when analyzing high-throughput experiment data.
+
+Our approach will be to view RNA-Seq data as *count* data where we count for each gene or for each transcript how many reads we find in our sample that align with a reference sequence from a database corresponding to this transcript.
+
+Counts of random events are often well-described by the Poisson distribution, so this is how we will start.
+
+## 'Melting' The Matrix
+
+Before fitting models to the count data, we have to convert it to a 'melted form' like so:
+
+```{r}
+library(reshape2) # for 'melt'
+counts_df <- as.data.frame(counts)
+countsm = melt(t(counts_df))  # little trick to swap columns and rows
+colnames(countsm) <- c('Sample', 'Gene', 'Count')
+knitr::kable(head(countsm,n=10))
+```
+
+## Modeling RNA-Seq Count Data Assuming a Poisson Distribution
+
+We can create a model of the count data using a generalized linear model (glm). This means that 'under the hood' R uses still code for the regular linear model (function `lm`), but the input data is transformed before starting a regular lineary regresion so that we can treat it as if we deal with a new way of fitting specialized data that is not linear. The code is showing below.
+
+```{r}
+# Fit a Poisson GLM to the count data
+poisson_model <- glm(Count ~ Sample+Gene, data = countsm, family = "poisson")
+summary(poisson_model)
+```
+
+Let's take a look at the obtained summary of the model. Most prominent is the section called 'Coefficients'. We will focus on their name (left-most column), the column 'Estimate' and the P-value ("Pr(\>\|z\|)").
+
+For a regular linear regression, the column 'Estimate' corresponds to the slope of a line. Because we performed a specialized type of regression to fit counts of a Poisson distribution, the column 'Estimate' has to be interpret differently. It stands for the logarithm of the predicted outcome for a that variable to be increased by one unit. In our case this stands for the predicted count values of a certain gene divided by the predicted count values averages over all except that particular gene. For example, for gene ENSG00000000971, the summary shows a value for the Estimate of 2.096109. This means $\log(\frac{count_g}{count_{ng}})=2.096$ or $count_g=count_{ng}e^{2.096}\approx 8.13 * count_{ng}$ In other words, the gene ENSG00000000971 has count values that are about 8 times higher compared to the count values of all the other genes. We should also look at the P-values and ensure that they indicate statistical significance.
+
+## Exercise 1
+
+a)  Interpret the summary of the model fit. What is the maximum and minimum deviation between the ground-truth and prediction? Hint: Look at min, max of Deviance Residuals
+
+```{r}
+# Grab our values
+dr_min <- -27.042
+dr_max <- 29.358
+
+# Calculate the difference. A larger difference may indicate poorer fit.
+dr_diff <- dr_max - dr_min
+dr_diff
+```
+
+b)  Consider gene ENSG00000000938. What is the raw Estimate value shown in the summary for this gene? Does this indicate that the count values for this genes are higher or lower compared to the counts of the other genes?
+
+```{r}
+# The estimate is -7.590010. This means it has gene counts x7.5 times lower than all of the other compared genes.
+```
+
+c)  Based on what you obtained in b), what is the odds ratio in terms of gene counts for this gene divided by the average counts of all the other genes?
+
+```{r}
+# Grab our count for the gene
+library(dplyr)
+count938 <- sum(countsm[which(countsm[,2]=="ENSG00000000938"),3])
+
+# Grab our count of the other genes
+group_countsm <- countsm[,2:3] %>%
+  filter(Gene != "ENSG00000000938") %>%
+  group_by(Gene) %>%
+  summarise(Freq = sum(Count))
+
+# Calculate the odds ratio
+count938 / mean(group_countsm$Freq)
+```
+
+d)  Apply the function `tidy` from R package `broom` to the Poisson model. Use function `knitr::kable` to print the resulting data frame.
+
+```{r}
+library(broom)
+knitr::kable(tidy(poisson_model))
+```
+
+## Modeling RNA-Seq Count Data Assuming a Negative Bionomial Distribution
+
+Next, we will use a similar approach for fitting a model that assumes a negative binomial distribution of the count data. One can view the Poisson distribution as a special case of the negative binomial distribution where the variance is given through the mean values. In contrast, the negative binomial distribution does not have this restriction, it can allow for larger variances as they are common in biological data.
+
+The function for fitting a generalized linear model based on this distribution can be found in the MASS package (the name of the library is based on the book title of the classic "Modern Applied Statistics with S").
+
+```{r}
+library(MASS) # for glm.nb
+# Fit a negative binomial GLM to the count data
+nb_model <- glm.nb(Count ~ Gene + Sample, data = countsm)
+summary(nb_model)
+```
+
+## Exercise 2: Comparing Residuals of the Models
+
+Let us inspect the quality of the generated models. One way is to look at the difference between the ground-truth values and the predicted values. This is called 'residual' in statisics.
+
+The formulate is: residual = observed y - predicted y
+
+a)  Use function `residuals` to compute how much our predictions deviate from the ground-truth values of the counts for the Poisson model. Summarize the numeric results (be creative).
+
+```{r}
+# Save our residuals separately
+pmr <- data.frame(residuals(poisson_model))
+
+# Count which bin they fall under
+pmr_counts <- c(
+  sum(pmr[,1] >= 15),
+  sum(pmr[,1] >= 10 & pmr[,1] < 15),
+  sum(pmr[,1] >= 5 & pmr[,1] < 10),
+  sum(pmr[,1] > 0 & pmr[,1] < 5),
+  sum(pmr[,1] == 0),
+  sum(pmr[,1] < 0 & pmr[,1] > -5),
+  sum(pmr[,1] <= -5 & pmr[,1] > -10),
+  sum(pmr[,1] <= -10 & pmr[,1] > -15),
+  sum(pmr[,1] <= -15)
+)
+
+# Label the bins
+bins <- c("15 or More", "14 to 10", "9 to 5","4 to 0","0","-0 to -4", "-5 to -9", "-10 to -14", "-15 or Less")
+
+# Build a table illustrating the distribution of residuals, the closer the spread is to 0 the better.
+knitr::kable(data.frame(bins, pmr_counts))
+```
+
+b)  Apply the same approach to the residuals corresponding to the negative binomial model.
+
+```{r}
+# Save our residuals separately
+nbmr <- data.frame(residuals(nb_model))
+
+# Count which bin they fall under
+nbmr_counts <- c(
+  sum(nbmr[,1] >= 15),
+  sum(nbmr[,1] >= 10 & nbmr[,1] < 15),
+  sum(nbmr[,1] >= 5 & nbmr[,1] < 10),
+  sum(nbmr[,1] > 0 & nbmr[,1] < 5),
+  sum(nbmr[,1] == 0),
+  sum(nbmr[,1] < 0 & nbmr[,1] > -5),
+  sum(nbmr[,1] <= -5 & nbmr[,1] > -10),
+  sum(nbmr[,1] <= -10 & nbmr[,1] > -15),
+  sum(nbmr[,1] <= -15)
+)
+
+# Label the bins
+bins <- c("15 or More", "14 to 10", "9 to 5","4 to 0","0","-0 to -4", "-5 to -9", "-10 to -14", "-15 or Less")
+
+# Build a table illustrating the distribution of residuals, the closer the spread is to 0 the better.
+knitr::kable(data.frame(bins, nbmr_counts))
+```
+
+c)  Find a way to plot your findings from a) and b) in an informative way. Be creative: you can create a combined plot or two separate plots; feel free to use plotting functions from either base-R or other libraries such as ggplot.
+
+```{r}
+# Grab our residuals
+pmr <- residuals(poisson_model)
+nbmr <- residuals(nb_model)
+
+# Set plot frame
+par(mfrow=c(1,2)) 
+
+# Graph residual plots. Will visualize the distribution of residuals. The better the model is, the closer the spread should be to 0.
+plot(fitted(poisson_model), pmr)
+abline(0,0)
+
+plot(fitted(nb_model), nbmr)
+abline(0,0)
+
+# Reset plot frame
+par(mfrow=c(1,1)) 
+```
+
+d)  Based on your findings in a)-c), what model seems superior and why?
+
+```{r}
+# The NB Model is superior. Its residuals, which represent deviation between prediction and ground-truth, are less broadly distributed and on average closer to the 0.
+```
+
+## Choosing the Better Model using the Aikike Information Criterion
+
+In statistic and machine learning we have the challenge that models with more parameters are intrinsically better able to obtain better fits to data compared to models with less parameters. But 'more' is not necessarily 'better' as it can lead to over-fitting! Somehow we need a way to balance the need for fitting the data well with the need to avoid a proliferation in model complexity.
+
+The Akaike Information Criterion (AIC) is a measure of the quality of a statistical model that takes into account both how well the model fits the data and how complex the model is. The AIC score is calculated by taking the log-likelihood of the model and subtracting a penalty term that increases as the number of parameters in the model increases.
+
+The AIC helps us choose the best model by balancing two things: how well the model fits the data and how complicated the model is. The AIC score is lower for models that fit the data well while using fewer parameters, which means they are more likely to generalize well to new data. So, the model with the lowest AIC score is usually considered the best model for a given set of data.
+
+In R we have the function `AIC` that computes this metric for a given model (for example `ACI(model)` )
+
+## Exercise 3
+
+a)  Use the function `AIC()` to compute the AIC metric for the model corresponding to the Poisson distribution. What is the value?
+
+```{r}
+# Calculate AIC for Poisson Model. Value is 9490.93
+AIC(poisson_model)
+```
+
+b)  Use the function `AIC()` to compute the AIC metric for the model corresponding to the negative binomial distribution. What is the value?
+
+```{r}
+# Calculate AIC for NB Model. Value is 2524.785
+AIC(nb_model)
+```
+
+c)  Based on your results in a) and b), which model seems to be preferable?
+
+```{r}
+# The NB Model remains superior, owing to its lower AIC value. It uses less parameters and is more likely to adapt well to general data.
+```
+
+## Exercise 4: General understanding of Count Matrix Analysis
+
+a)  Use common sense: Why is the number RNA-Seq reads one identifies for a certain transcript variant approximately proportional to the RNA sequence length of that transcript variant?
+
+```{r}
+# A longer variant will have more reads that map to it.
+```
+
+b)  It is tempting to use the odds-ratios of counts we obtained earlier in form of the `glm` estimates as measures for gene expression. Why is that not directly workable? Hint: see a)
+
+```{r}
+# A straight odds-ratio will be bias and misleading. Longer variants will have more reads that map to them, and therefore appear to be more expressed. We need to normalize for read length to draw any meaningful conclusions. You can see this in our data. The QQ plots are non-linear, indicating that they need to be normalized.
+
+par(mfrow=c(1,2)) 
+qqnorm(pmr)
+qqline(pmr)
+
+qqnorm(nbmr)
+qqline(nbmr)
+par(mfrow=c(1,1)) 
+```
+
+c)  Another key aspect that our initial modeling using `glm` did not account for is that experiments are typically grouped together, and one compares one condition versus another, each supported by counts for several samples. Present ideas how our models could be refined such that we do not simply compare each sample individually but instead of sample groups by different treatments.
+
+```{r}
+# We can add variables in our regression models. If possible, one solution would be to have experimental conditions included with the data, then list it as a variable to account for in the model. It might also be possible to do something with clustering, but this seems less reliable than utilizing the original data.
+```
+
+## Resources
+
+-   <https://stats.oarc.ucla.edu/r/dae/poisson-regression/>
+-   <https://bioconductor.org/packages/release/data/experiment/html/airway.html>

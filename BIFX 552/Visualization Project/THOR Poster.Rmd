@@ -1,0 +1,232 @@
+---
+title: Analysis of WWII THOR Avation Mission Database
+author:
+- name: J. Jedediah Smith
+affiliation:
+- address: BIFX 552 Data Visualization Project, Hood College
+#poster dimensions
+#poster_height: "38in" #posterdown default
+#poster_width: "45in" #posterdown default
+# Dimensions 36" x 48" is ARCH E paper size
+poster_height: "36in" #web recommended size
+poster_width: "48in" #web recommended size
+column_numbers: 3
+#logoright_name: 1C_Vertical.jpeg
+logoleft_name: 4C_Vertical.jpg
+# Hood logo colors
+# gray #a39994 PANTONE Warm Gray 6, CMYK 11, 16, 18, 32
+# blue #30608b PANTONE 647, CMYK 70, 35, 0, 40
+primary_colour: "#30608b" #Hood blue, RGB 48, 96, 139
+# secondary_colour: "#a39994" #Hood Warm Gray 6, RGB 164, 154, 148
+accent_colour: "#cc0000"
+output: 
+  posterdown::posterdown_html:
+    self_contained: false
+bibliography: references.bib
+knit: pagedown::chrome_print
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# Load packages
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(forcats)
+library(stringr)
+library(scales)
+
+# Read in data
+fulldata <- read_csv('THOR_WWII_DATA_CLEAN.csv')
+
+# Subset variables we want to use
+vars <- c("MSNDATE","THEATER","COUNTRY_FLYING_MISSION",
+          "TGT_COUNTRY","TGT_LOCATION","TGT_TYPE","LATITUDE","LONGITUDE",
+          "TONS_OF_HE","TONS_OF_IC","TONS_OF_FRAG","TOTAL_TONS")
+
+subdata <- fulldata[vars] %>%
+
+# Fix N/A where applicable, then remove remaining N/A.
+##### Preserves entries where country target is known, but target type or city is not.
+##### Preserves entries where some of the bomb load is N/A, as 0 and N/A appear to have been used interchangeably.
+##### Preserves entries with unknown country flying mission, theater, or target country so they are counted where applicable.
+
+mutate(TGT_LOCATION = case_when(TGT_LOCATION == "UNIDENTIFIED TARGET" ~ "UNIDENTIFIED",
+                                is.na(TGT_LOCATION) ~ "UNIDENTIFIED",
+                                !is.na(TGT_LOCATION) ~ TGT_LOCATION)) %>%
+
+mutate(TGT_TYPE = case_when(TGT_TYPE == "UNIDENTIFIED TARGET" ~ "UNIDENTIFIED",
+                                is.na(TGT_TYPE) ~ "UNIDENTIFIED",
+                                !is.na(TGT_TYPE) ~ TGT_TYPE)) %>%
+
+mutate(TGT_COUNTRY = case_when(TGT_COUNTRY == "UNKNOWN OR NOT INDICATED" ~ "UNIDENTIFIED",
+                              is.na(TGT_COUNTRY) ~ "UNIDENTIFIED",
+                              !is.na(TGT_COUNTRY) ~ TGT_COUNTRY)) %>%
+
+mutate(COUNTRY_FLYING_MISSION = case_when(is.na(COUNTRY_FLYING_MISSION) ~ "Unidentified",
+                               COUNTRY_FLYING_MISSION == "GREAT BRITAIN" ~ "Great Britain",
+                               COUNTRY_FLYING_MISSION == "USA" ~ "United States",
+                               COUNTRY_FLYING_MISSION == "NEW ZEALAND" ~ "New Zealand",
+                               COUNTRY_FLYING_MISSION == "AUSTRALIA" ~ "Australia",
+                               COUNTRY_FLYING_MISSION == "SOUTH AFRICA" ~ "South Africa",
+                               !is.na(COUNTRY_FLYING_MISSION) ~ COUNTRY_FLYING_MISSION)) %>%
+
+mutate(THEATER = case_when(is.na(THEATER) ~ "Unidentified",
+                                !is.na(THEATER) ~ THEATER)) %>%
+
+mutate(TONS_OF_HE = case_when(is.na(TONS_OF_HE) ~ 0.0,
+                                !is.na(TONS_OF_HE) ~ TONS_OF_HE)) %>%
+
+mutate(TONS_OF_IC = case_when(is.na(TONS_OF_IC) ~ 0.0,
+                                !is.na(TONS_OF_IC) ~ TONS_OF_IC)) %>%
+
+mutate(TONS_OF_FRAG = case_when(is.na(TONS_OF_FRAG) ~ 0.0,
+                                !is.na(TONS_OF_FRAG) ~ TONS_OF_FRAG)) %>%
+
+mutate(TOTAL_TONS = case_when(is.na(TOTAL_TONS) ~ 0.0,
+                                !is.na(TOTAL_TONS) ~ TOTAL_TONS)) %>%
+  
+mutate(MSNDATE = as.Date(MSNDATE, format = "%m/%d/%Y")) %>%
+  
+mutate(THEATER = case_when(THEATER == "ETO" ~ "Europe",
+                           THEATER == "PTO" ~ "Pacific",
+                           THEATER == "MTO" ~ "Mediterranean",
+                           THEATER == "CBI" ~ "China",
+                           THEATER == "EAST AFRICA" ~ "East Africa",
+                           is.na(THEATER) ~ "Unidentified")) %>%
+
+na.omit()
+
+# Percent of data omitted.
+percent_omit <-  as.numeric((count(fulldata) - count(subdata))/count(fulldata))*100
+percent_omit <- round(percent_omit, digits=2)
+
+# Set up colorblind pallete
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# Set up Figure Stats
+label_size <- 16
+xtitle_size <- 24
+title_size <- 32
+```
+
+# Introduction
+
+Theater History of Operations (THOR) is a database of aerial bombing data from World War I to Vietnam [@R-THOR]. It has been carefully constructed using digitized mission reports from US and allied air forces [@R-THOR]. Data from THOR has helped locate unexploded bombs in South East Asia and informed air force combat tactics [@R-THOR]. In this project, we will analyze the World War II subset of THOR and look at how the conflict progressed.
+
+## Questions
+
+1. How do the number of missions and amount of bombs compare?
+2. Which Allied country did the most missions? 
+3. When countries were hit hardest during the war?
+4. What regions did Allied bombers target the most?
+
+# Methods
+
+This project uses the basic `ggplot2` package to help visualize the answers to most of our questions. Geographic data was mapped using `mapview`. All data was regularly cleaned and passed using the `dplyr` and `tinyr` packages. This presented the most challenging part of the project. Various different placeholder values were used for unknown or missing data. The variations had to be individually identified and renamed. Approximately `r max(percent_omit)`% of the data was omitted due to lacking geographic data.  Additionally, an illusive non-Unicode character in one of the fields was causing problems with the map generation. However, this was overcome by simplifying the map and excluding the problematic column.
+
+# Results
+
+To help with our first question, we have Figure \@ref(fig:Twin-Plot). As shown, the number of missions and amount of bombs dropped seem to trend in the same direction. Both dramatically increase around the beginning of 1942.
+
+```{r Twin-Plot, out.width='50%', fig.show="hold", fig.align='center', fig.cap='Number of bomber missions flown and amount of bombs dropped by the Allied Powers over the course of the war in all theaters of battle.', fig.height=5}
+# Number of Missions by Time
+ggplot(subdata, aes(x = MSNDATE)) +
+  geom_line(stat="bin", binwidth = 96, linewidth = 1) +
+  scale_x_date(breaks = "1 year", date_labels = "%Y") +
+  labs(x = 'Year', y = 'Number of Missions') +
+  ggtitle("Number of Missions by Time") +
+  theme(
+    plot.title = element_text(color="black", size=title_size, face="bold", hjust = 0.5),
+    axis.title.x = element_text(color="black", size=xtitle_size, face="bold"),
+    axis.title.y = element_text(color="black", size=xtitle_size, face="bold"),
+    axis.text.y = element_text(angle=90, hjust=0.5, size=label_size),
+    axis.text.x = element_text(size=label_size)) +
+  scale_y_continuous(labels = label_number(suffix = " K", scale = 1e-3))
+
+# Tons of Bombs by Time
+Tons_by_Year <- subdata %>%
+  mutate(MSNDATE = format(as.Date(MSNDATE, format="%d/%m/%Y"),"%Y")) %>%
+  group_by(MSNDATE) %>%
+  summarise(TOTAL_TONS = sum(TOTAL_TONS))
+
+ggplot(Tons_by_Year, aes(x = MSNDATE, y = TOTAL_TONS, group = 1)) +
+  geom_line(linewidth = 1) +
+  labs(x = 'Year', y = 'Tons of Bombs') +
+  ggtitle("Tons of Bombs by Time") +
+  theme(
+    plot.title = element_text(color="black", size=title_size, face="bold", hjust = 0.5),
+    axis.title.x = element_text(color="black", size=xtitle_size, face="bold"),
+    axis.title.y = element_text(color="black", size=xtitle_size, face="bold"),
+    axis.text.y = element_text(angle=90, hjust=0.5, size=label_size),
+    axis.text.x = element_text(size=label_size)) +
+  scale_y_continuous(labels = label_number(suffix = " M", scale = 1e-6))
+```
+
+Our second question is aided by Figure \@ref(fig:By-Country-Plot). As shown, the main country running missions early on is by Great Britain. This is later eclipsed by the United States. The unidentified category may represent joint missions, as it picks up where the Great Britain trend declines, and trends similar to the United States. However, there is no explanation for this on the website that hosts our dataset.
+
+```{r By-Country-Plot, out.width='80%', fig.align='center', fig.cap='Number of missions flown by each Allied country over the course of the war in all theaters of battle. Unidentified may represent joint missions.', fig.height=5}
+subdata$COUNTRY_FLYING_MISSION <- factor(subdata$COUNTRY_FLYING_MISSION, levels = c("United States", "Unidentified", "Great Britain", "Australia", "New Zealand", "South Africa"))
+ggplot(subdata, aes(x = MSNDATE, color=COUNTRY_FLYING_MISSION)) + 
+  geom_line(stat="bin", binwidth = 96, linewidth = 1) +
+  scale_x_date(breaks = "1 year", date_labels = "%Y") +
+  labs(x = 'Year', y = 'Number of Missions', col = 'Country Flying Mission') +
+  ggtitle("Number of Missions by Time") +
+  scale_colour_manual(values=cbbPalette) +
+  theme(
+    plot.title = element_text(color="black", size=30, face="bold", hjust = 0.3),
+    axis.title.x = element_text(color="black", size=22, face="bold"),
+    axis.title.y = element_text(color="black", size=22, face="bold"),
+    axis.text.y = element_text(angle=90, hjust=0.5, size=14),
+    axis.text.x = element_text(size=14),
+    legend.title=element_text(size=12), 
+    legend.text=element_text(size=12)
+  )
+```
+
+Figure \@ref(fig:By-Theater-Plot) helps us out with our third question. As shown, the European Theater is hit the hardest, followed by the Mediterranean, Pacific, and the rest. Generally speaking, Europe can be seen as Germany, the Mediterranean and East Africa as Italy, and the Pacific and China as Japan. Actual targets can be found in the original data, but are difficult to work with. They use geographic names like Papua New Guinea or Corsica instead of the name of the nation that is occupying them.
+
+```{r By-Theater-Plot, out.width='80%', fig.align='center', fig.cap='Amount of bombs dropped by the Allied Powers over the course of the war in each theater.', fig.height=5}
+# Tons of Bombs by Theater
+Tons_by_Theater <- group_by(subdata, THEATER) %>%
+  summarise(TOTAL_TONS = sum(TOTAL_TONS)) %>%
+  arrange(desc(TOTAL_TONS))
+
+ggplot(Tons_by_Theater) +
+  geom_bar(aes(reorder(x = THEATER, -TOTAL_TONS), y = TOTAL_TONS), stat="identity") +
+  labs(x = 'Targert Theater', y = 'Tons of Bombs') +
+  ggtitle("Tons of Bombs by Theater") +
+  theme(
+    plot.title = element_text(color="black", size=30, face="bold", hjust = 0.5),
+    axis.title.x = element_text(color="black", size=22, face="bold"),
+    axis.title.y = element_text(color="black", size=22, face="bold"),
+    axis.text.y = element_text(angle=90, hjust=0.5, size=14),
+    axis.text.x = element_text(size=14)) +
+  scale_y_continuous(labels = label_number(suffix = " M", scale = 1e-6))
+```
+
+Our fourth question is explored with Figure \@ref(fig:Twin-Maps). As shown, missions in Europe are concentrated along the northern coast of France and Germany, along with the western coast of Italy. Missions in the Pacific are concentrated in the southern half of Japan, the northern coast of Papua New Guinea, the Philippines, and Burma.
+
+```{r Twin-Maps, out.width='50%', fig.show="hold", fig.align='center', fig.cap='Distribution of Allied bomber missions during the war plotted on reginal maps map. Left image contains Europe and Mediterranean data. Right contains Pacific and China data.', fig.height=5}
+knitr::include_graphics(c("./EuropeMap.png","./PacificMap.png"))
+```
+
+# Conclusions
+
+Our data here helps tell a broad story of World War II from the air. In Figure \@ref(fig:Twin-Plot), we see that numbers start to trend upwards around 1942. This lines up with the entry of the United States into the war on 7 December 1941 after the Japanese attack on Pearl Harbor.
+
+Figure \@ref(fig:By-Country-Plot) confirms our previous assertion by breaking down who flew the most missions over the course of World War II: the United States. These numbers make sense, as the total aircraft production by the United States during the war was nearly triple that of Britain [@R-AirProd].
+
+Figure \@ref(fig:By-Theater-Plot) show us that a far greater amount of bombs were dropped on Germany than Italy or Japan. Collectively, this indicates a focus in Europe rather than in Asia, which is the exactly policy decided upon by the Allies at the Arcadia Conference in early 1942 [@R-GermanyFirst].
+
+Figure \@ref(fig:Twin-Maps) gives us an idea of the areas hit most frequently by Allied bombers. This loosely correlates with main fronts of the war, such as in France and the Philippines, as well as strategic bombing campaigns against the industrial heartlands of Japan and Germany.
+
+Although our data may be skewed a bit in favor if United States records and the European Theater, a flaw the data source itself acknowledges, it still does a decent job portraying an overview of the war.
+
+```{r, include=FALSE}
+# knitr::write_bib(c('knitr','rmarkdown','posterdown','pagedown'), 'packages.bib')
+```
+
+# References

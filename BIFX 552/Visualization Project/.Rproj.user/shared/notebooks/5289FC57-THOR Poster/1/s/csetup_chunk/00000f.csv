@@ -1,0 +1,112 @@
+"0","knitr::opts_chunk$set(echo = FALSE)"
+"0",""
+"0","# Load packages"
+"0","library(readr)"
+"2","
+Attaching package: ‘readr’
+
+"
+"2","The following object is masked from ‘package:scales’:
+
+    col_factor
+
+"
+"0","library(dplyr)"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","library(tidyr)"
+"0","library(ggplot2)"
+"0","library(forcats)"
+"0","library(stringr)"
+"0","library(scales)"
+"0",""
+"0","# Read in data"
+"0","fulldata <- read_csv('THOR_WWII_DATA_CLEAN.csv')"
+"2","Warning: [38;5;232mOne or more parsing issues, call `problems()` on your data frame for details, e.g.:
+  dat <- vroom(...)
+  problems(dat)[39m"
+"2","[1mRows: [22m[34m178281[39m [1mColumns: [22m[34m62[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (21): MSNDATE, THEATER, NAF, COUNTRY_FLYING_MISSION, TGT_COUNTRY, TGT_LOCATION, TGT_TYPE, TGT_INDUSTRY, SOURCE_LATITUDE, UNIT_ID, MDS, AIRCRAFT_NAME...
+[32mdbl[39m (31): WWII_ID, MASTER_INDEX_NUMBER, TGT_COUNTRY_CODE, TGT_ID, TGT_INDUSTRY_CODE, SOURCE_LONGITUDE, LATITUDE, LONGITUDE, MSN_TYPE, AC_ATTACKING, ALTI...
+[33mlgl[39m (10): LBS_IC, AC_LOST, AC_DAMAGED, BDA, CALLSIGN, ROUNDS_AMMO, MECH_FAIL_AC, TARGET_COMMENT, MISSION_COMMENTS, SOURCE"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","# Subset variables we want to use"
+"0","vars <- c(""MSNDATE"",""THEATER"",""COUNTRY_FLYING_MISSION"","
+"0","          ""TGT_COUNTRY"",""TGT_LOCATION"",""TGT_TYPE"",""LATITUDE"",""LONGITUDE"","
+"0","          ""TONS_OF_HE"",""TONS_OF_IC"",""TONS_OF_FRAG"",""TOTAL_TONS"")"
+"0",""
+"0","subdata <- fulldata[vars] %>%"
+"0",""
+"0","# Fix N/A where applicable, then remove remaining N/A."
+"0","##### Preserves entries where country target is known, but target type or city is not."
+"0","##### Preserves entries where some of the bomb load is N/A, as 0 and N/A appear to have been used interchangeably."
+"0","##### Preserves entries with unknown country flying mission, theater, or target country so they are counted where applicable."
+"0",""
+"0","mutate(TGT_LOCATION = case_when(TGT_LOCATION == ""UNIDENTIFIED TARGET"" ~ ""UNIDENTIFIED"","
+"0","                                is.na(TGT_LOCATION) ~ ""UNIDENTIFIED"","
+"0","                                !is.na(TGT_LOCATION) ~ TGT_LOCATION)) %>%"
+"0",""
+"0","mutate(TGT_TYPE = case_when(TGT_TYPE == ""UNIDENTIFIED TARGET"" ~ ""UNIDENTIFIED"","
+"0","                                is.na(TGT_TYPE) ~ ""UNIDENTIFIED"","
+"0","                                !is.na(TGT_TYPE) ~ TGT_TYPE)) %>%"
+"0",""
+"0","mutate(TGT_COUNTRY = case_when(TGT_COUNTRY == ""UNKNOWN OR NOT INDICATED"" ~ ""UNIDENTIFIED"","
+"0","                              is.na(TGT_COUNTRY) ~ ""UNIDENTIFIED"","
+"0","                              !is.na(TGT_COUNTRY) ~ TGT_COUNTRY)) %>%"
+"0",""
+"0","mutate(COUNTRY_FLYING_MISSION = case_when(is.na(COUNTRY_FLYING_MISSION) ~ ""Unidentified"","
+"0","                               COUNTRY_FLYING_MISSION == ""GREAT BRITAIN"" ~ ""Great Britain"","
+"0","                               COUNTRY_FLYING_MISSION == ""USA"" ~ ""United States"","
+"0","                               COUNTRY_FLYING_MISSION == ""NEW ZEALAND"" ~ ""New Zealand"","
+"0","                               COUNTRY_FLYING_MISSION == ""AUSTRALIA"" ~ ""Australia"","
+"0","                               COUNTRY_FLYING_MISSION == ""SOUTH AFRICA"" ~ ""South Africa"","
+"0","                               !is.na(COUNTRY_FLYING_MISSION) ~ COUNTRY_FLYING_MISSION)) %>%"
+"0",""
+"0","mutate(THEATER = case_when(is.na(THEATER) ~ ""Unidentified"","
+"0","                                !is.na(THEATER) ~ THEATER)) %>%"
+"0",""
+"0","mutate(TONS_OF_HE = case_when(is.na(TONS_OF_HE) ~ 0.0,"
+"0","                                !is.na(TONS_OF_HE) ~ TONS_OF_HE)) %>%"
+"0",""
+"0","mutate(TONS_OF_IC = case_when(is.na(TONS_OF_IC) ~ 0.0,"
+"0","                                !is.na(TONS_OF_IC) ~ TONS_OF_IC)) %>%"
+"0",""
+"0","mutate(TONS_OF_FRAG = case_when(is.na(TONS_OF_FRAG) ~ 0.0,"
+"0","                                !is.na(TONS_OF_FRAG) ~ TONS_OF_FRAG)) %>%"
+"0",""
+"0","mutate(TOTAL_TONS = case_when(is.na(TOTAL_TONS) ~ 0.0,"
+"0","                                !is.na(TOTAL_TONS) ~ TOTAL_TONS)) %>%"
+"0","  "
+"0","mutate(MSNDATE = as.Date(MSNDATE, format = ""%m/%d/%Y"")) %>%"
+"0","  "
+"0","mutate(THEATER = case_when(THEATER == ""ETO"" ~ ""Europe"","
+"0","                           THEATER == ""PTO"" ~ ""Pacific"","
+"0","                           THEATER == ""MTO"" ~ ""Mediterranean"","
+"0","                           THEATER == ""CBI"" ~ ""China"","
+"0","                           THEATER == ""EAST AFRICA"" ~ ""East Africa"","
+"0","                           is.na(THEATER) ~ ""Unidentified"")) %>%"
+"0",""
+"0","na.omit()"
+"0",""
+"0","# Percent of data omitted."
+"0","percent_omit <-  as.numeric((count(fulldata) - count(subdata))/count(fulldata))*100"
+"0","percent_omit <- round(percent_omit, digits=2)"
+"0",""
+"0","# Set up colorblind pallete"
+"0","cbbPalette <- c(""#000000"", ""#E69F00"", ""#56B4E9"", ""#009E73"", ""#F0E442"", ""#0072B2"", ""#D55E00"", ""#CC79A7"")"

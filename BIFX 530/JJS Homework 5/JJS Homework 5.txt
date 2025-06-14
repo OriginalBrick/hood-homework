@@ -1,0 +1,131 @@
+J. Jedediah Smith
+BIFX 530
+Homework 5
+10/13/2022
+
+Consider the banking schema below:
+	emp(eid: integer, ename: string, age: integer, salary: real)
+	works(eid: integer, did: integer, pct_time: integer)
+	dept(did: integer, dname: string, budget: real, managerid: integer)
+Write and execute the following queries in SQL:
+
+
+1. Print the names and ages of each employee who works in the Hardware department.
+
+MariaDB [jjs14db]> SELECT emp.ename, emp.age
+    -> FROM emp
+    -> INNER JOIN works ON emp.eid = works.eid
+    -> INNER JOIN dept ON works.did = dept.did
+    -> WHERE dept.dname = "Hardware";
++-----------------+------+
+| ename           | age  |
++-----------------+------+
+| Mary Johnson    |   44 |
+| Stanley Browne  |   23 |
+| James Smith     |   68 |
+| Jennifer Thomas |   24 |
++-----------------+------+
+4 rows in set (0.00 sec)
+
+
+2. For each department with more than 20 employees, print the did together with the number of
+employees that work in that department.
+
+MariaDB [jjs14db]> SELECT dept.did, count(emp.ename)
+    -> FROM dept
+    -> INNER JOIN works ON works.did = dept.did
+    -> INNER JOIN emp ON works.eid = emp.eid
+    -> GROUP BY dept.did
+    -> HAVING count(emp.ename) > 20;
++-----+------------------+
+| did | count(emp.ename) |
++-----+------------------+
+|   2 |               26 |
+|   6 |               22 |
++-----+------------------+
+2 rows in set (0.00 sec)
+
+
+3. Print the name of each employee whose salary exceeds the average salary of all employees.
+
+MariaDB [jjs14db]> SELECT ename
+    -> FROM emp
+    -> WHERE salary > all(
+    -> SELECT avg(salary)
+    -> FROM emp);
++----------------+
+| ename          |
++----------------+
+| John Williams  |
+| Scott Bell     |
+| Mary Johnson   |
+| Susan Martin   |
+| Gil Richardson |
+| Matt Nelson    |
+| Barbara Wilson |
+| Patricia Jones |
+| Michael Miller |
+| Donald King    |
+| Edward Baker   |
++----------------+
+11 rows in set (0.00 sec)
+
+
+4. Find the managerids of managers who manage only departments with budgets greater than
+$1 million.
+
+MariaDB [jjs14db]> SELECT managerid
+    -> FROM dept d1
+    -> WHERE budget > 1000000 AND NOT EXISTS
+    -> (SELECT managerid
+    -> FROM dept d2
+    -> WHERE budget < 1000000 AND d1.managerid = d2.managerid);
++-----------+
+| managerid |
++-----------+
+| 287321212 |
+| 578875478 |
++-----------+
+2 rows in set (0.00 sec)
+
+
+5. Find the employees who work in the ‘Operations’ department and print the information (eid,
+ename, age, and salary) for each employee. The output should be ordered by ename.
+
+MariaDB [jjs14db]> SELECT emp.eid, ename, age, salary
+    -> FROM emp
+    -> INNER JOIN works ON emp.eid = works.eid
+    -> INNER JOIN dept ON works.did = dept.did
+    -> WHERE dept.dname = "Operations"
+    -> ORDER BY ename;
++-----------+--------------------+------+-----------+
+| eid       | ename              | age  | salary    |
++-----------+--------------------+------+-----------+
+| 552455318 | Ana Lopez          |   35 |  41008.00 |
+| 132977562 | Angela Martinez    |   31 |  24998.00 |
+| 318548912 | Ann Mitchell       |   23 |  32175.00 |
+| 574489456 | Betty Adams        |   39 |  39910.00 |
+|  60839453 | Charles Harris     |   24 |  24998.00 |
+| 115987938 | Christopher Garcia |   60 |  24998.00 |
+| 320874981 | Daniel Lee         |   23 |  32175.00 |
+|  90873519 | Elizabeth Taylor   |   27 |  33055.00 |
+| 550156548 | George Wright      |   42 |  41008.00 |
+| 112348546 | Joseph Thompson    |   26 |  24998.00 |
+| 301221823 | Juan Rodriguez     |   30 |  32175.00 |
+| 567354612 | Karen Scott        |   70 |  39910.00 |
+| 556784565 | Kenneth Hill       |   81 |  41008.00 |
+| 322654189 | Lisa Walker        |   38 |  32175.00 |
+| 455798411 | Luis Hernandez     |   44 |  39910.00 |
+| 280158572 | Margaret Clark     |   40 |  24998.00 |
+|  51135593 | Maria White        |   22 |  24998.00 |
+| 451519864 | Mark Young         |   34 |  39910.00 |
+| 287321212 | Michael Miller     |   62 | 131072.00 |
+| 351565322 | Nancy Allen        |   30 |  39910.00 |
+| 489221823 | Richard Jackson    |   33 |  32996.00 |
+| 269734834 | Rick Carter        |   38 |  24998.00 |
+| 356187925 | Robert Brown       |   28 |  35431.00 |
+| 573284895 | Steven Green       |   29 |  39910.00 |
+| 142519864 | Susan Martin       |   39 |  56990.00 |
+| 348121549 | Trey Phillips      |   69 |  32175.00 |
++-----------+--------------------+------+-----------+
+26 rows in set (0.00 sec)

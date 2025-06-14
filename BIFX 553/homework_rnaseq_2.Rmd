@@ -1,0 +1,488 @@
+---
+title: "Homework: Analyzing RNA-Seq Data with edgeR and DESeq2"
+author: "J. Jedediah Smith"
+date: "2023-04-16"
+output:
+  word_document: default
+  html_document: default
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+## From Reads to Count Matrices
+
+Let us tabulate, how often a read matches to a gene region. Let there be
+2 rows for the 2 genes. And let there be for n students be n \* 2
+columns (n columns for control and n columns for "case"). In this matrix
+we enter integer values: for each gene, each students reports two
+numbers: the number of reads that match to that gene from the normal
+group and the control group. This is called the "count matrix".
+
+## Read Data
+
+Adjust the variable `MY_DATA_PATH` so it corresponds to the directory
+where the inputfiles for this work ('mock_case_1.txt', 'mock_case_2.txt'
+, etc.) are located.
+
+```{r}
+MY_DATA_PATH = 'mockgenome2' # CHANGE IF NEEDED
+indir = MY_DATA_PATH
+stopifnot(file.exists(indir))
+genomefile = 'mock_genome.txt'
+sequencefile = 'mock_sequences.txt'
+casefiles = c('mock_case_1.txt', 'mock_case_2.txt',
+              'mock_case_3.txt', 'mock_case_4.txt')
+controlfiles = c('mock_control_1.txt', 'mock_control_2.txt',
+              'mock_control_3.txt')
+genome = readLines(file.path(indir, genomefile))
+sequences = readLines(file.path(indir, sequencefile))
+```
+
+The read genome sequence is: `r genome` The individual sequences are:
+
+```{r}
+print(sequences)
+```
+
+## Exercise 1: Find Matches using `matchPattern`
+
+Use the control sequences to find matching regions. Identify the region
+where the first sequence from `mock_control_1.txt` is matching the mock
+genome sequence. Use the function `matchPattern` from the `Biostrings`
+package.
+
+```{r}
+library(Biostrings)
+
+gx <- DNAString(genome)
+cr1 <- readLines(file.path(indir, controlfiles[1]))
+
+matches <- matchPattern(cr1[1],gx)
+matches
+```
+
+## Exercise 2: Find Matches using matchPDict
+
+A more elegant way to obtain all matches for a set of patterns is using
+the functions PDict and matchPDict that first create a dictionary of
+patterns and then perform a fast search in a target region.
+
+a)  Use the function PDict to generate a dictionary of patterns for all
+    sequences from file `mock_control_1.txt`
+
+```{r}
+cr1d <- PDict(cr1)
+cr1d
+
+```
+
+b)  Use function matchPDict to generate a list of all matches of all
+    sequences with respect to the mock genome. Apply function `unlist`
+    to the result of matchPDict to obtain an easier to process result.
+    Store the result in a variable called `my_ranges`.
+
+```{r}
+my_ranges <- unlist(matchPDict(cr1d,gx))
+my_ranges
+```
+
+c)  Use the function `coverage` on the result of the previous step to
+    find the coverage of of the matches (in other words for each
+    position on the mock genome a number that indicates how many mock
+    reads are matching). Print the resulting output. Hint: The function
+    `coverage` will not show the last region of the mock genome without
+    any matches. One can nudge the function to also include that region
+    with the parameter `width` and provided the length of the target
+    sequence.
+
+```{r}
+mr_coverage <- coverage(my_ranges, width = length(gx))
+mr_coverage
+```
+
+d)  Plot the coverage using function `plot` as line-chart. Hint: First
+    convert the run-length encoded result from the previous step to a
+    regular vector using the function as.vector(...)
+
+```{r}
+# Convert length to vector
+mr_coverage@lengths <- as.vector(mr_coverage@lengths)
+
+# Plot coverage
+plot(mr_coverage)
+```
+
+e)  Identify gene regions: inspect the coverage plot. How many (mock)
+    genes do you think are encoded in the mock genome? What genomic
+    regions to they correspond to?
+
+```{r}
+# There seems to be 2 large peaks. I would imagine each of them represents a mock gene region. The first goes from ~10 to ~30. The second from ~40 to ~70.
+```
+
+## Exercise 3: From Read Alignments to a Count Matrix
+
+Let's write code that counts how many mock reads are matching a
+particular region in our mock genome. We already have the key
+information in form of the result of function matchPDict above.
+
+Let's create to IRanges objects that represent the intervals of the
+genes we identified:
+
+```{r}
+library(IRanges)
+g1range = IRanges(start=11, end=30)
+g2range = IRanges(start=41, end=70)
+```
+
+With function `findOverlaps` from R package `IRanges` we can know
+identify all reads that overlap with the genomic regions corresponding
+to gene1 and gene2 like so:
+
+```{r}
+# variable my_ranges contains result from matchPDict above
+findOverlaps(g1range, my_ranges)
+```
+
+a)  Instead of function `findOverlaps`, use similar function
+    `countOverlaps` to count how many mock reads are overlapping with
+    g1range and g2range. What are the 2 counts?
+
+```{r}
+# Count overlaps for each region
+countOverlaps(g1range, my_ranges) # 13
+countOverlaps(g2range, my_ranges) # 26
+```
+
+*Finally*, we identified two entries we can use in our count matrix!
+
+b)  Write code, that generates a complete count matrix for all 7 sample
+    files and the two genes, resulting in a matrix with 2 rows and 7
+    columns. It strongly encouraged to define your own functions so that
+    you do not have to repeat similar code 2x7=14 times! Print the 2x7
+    count matrix you computed.
+
+```{r}
+# Function to count which reads overlap with given gene range.
+GeneCount <- function(g_range,r_range) {
+  return(countOverlaps(g_range, r_range))
+}
+
+# Function to grab reads from designated file.
+ReadGrab <- function(set,index) {
+  cr <- readLines(file.path(indir, set[index]))
+  crd <- PDict(cr)
+  return(unlist(matchPDict(crd,gx)))
+}
+
+# Create the matrix by utilizing the functions.
+count_matrix <- data.frame(cbind(
+  Gene1 = c(
+    GeneCount(g1range,ReadGrab(casefiles,1)),
+    GeneCount(g1range,ReadGrab(casefiles,2)),
+    GeneCount(g1range,ReadGrab(casefiles,3)),
+    GeneCount(g1range,ReadGrab(casefiles,4)),
+    GeneCount(g1range,ReadGrab(controlfiles,1)),
+    GeneCount(g1range,ReadGrab(controlfiles,2)),
+    GeneCount(g1range,ReadGrab(controlfiles,3))
+  ),
+  Gene2 = c(
+    GeneCount(g2range,ReadGrab(casefiles,1)),
+    GeneCount(g2range,ReadGrab(casefiles,2)),
+    GeneCount(g2range,ReadGrab(casefiles,3)),
+    GeneCount(g2range,ReadGrab(casefiles,4)),
+    GeneCount(g2range,ReadGrab(controlfiles,1)),
+    GeneCount(g2range,ReadGrab(controlfiles,2)),
+    GeneCount(g2range,ReadGrab(controlfiles,3))
+  )
+))
+
+# Make sure to name our rows!
+rownames(count_matrix) <- c("Case1", "Case2", "Case3", "Case4",
+                            "Control1", "Control2", "Control3")
+
+# Print the matrix
+count_matrix
+
+```
+
+## Using edgeR for RNA-Seq Normalization
+
+Now we will use the `edgeR` package to use counts of RNA-Seq reads
+aligned to different gene regions in order to estimate differential gene
+expression. This is mock data, we assume that we have 2 experimental
+conditions called 'Case' and 'Control'.
+
+```{r}
+library(edgeR)
+# library(dplyr)
+options(warn=-1)
+counts = matrix(0, nrow=2, ncol=7) # 0 is just placeholder, will be replaced
+rownames(counts) = c('Gene1', 'Gene2')
+colnames(counts) = c("Case1", 'Case2', 'Case3', 'Case4',
+                     'Control1', 'Control2', 'Control3')
+counts['Gene1',] = c(17,	12,	10,	5,	85,	67,	90)  # counts for Gene1
+counts['Gene2',] = c(72,	81,	79,	92,	36,	41,	39)  # counts for Gene2
+knitr::kable(counts)
+df = tibble::tibble(ID=c("Case1",'Case2','Case3','Case4',
+                           'Control1', 'Control2', 'Control3'),
+                    Group=c('Case','Case','Case','Case',
+                            'Control','Control','Control'))
+knitr::kable(df)
+```
+
+### Grouping of Experiments
+
+We have to tell the algorithm how experiments are grouped into several
+groups. Examples are 'tumor' versus 'normal' or 'treatment' versus
+'control'. In our case we call it 'Case' versus 'Control'.
+
+```{r}
+grouping <- factor(df[['Group']])
+print(grouping)
+```
+
+### Creating a Differential Gene Expression List Object (DGEList)
+
+```{r}
+count_dge <- edgeR::DGEList(counts=counts,group=grouping)
+count_dge
+```
+
+### Using edgeR
+
+```{r}
+design <- model.matrix(~ grouping)
+eset_dge <- edgeR::estimateDisp(count_dge, design)
+fit <- edgeR::glmQLFit(eset_dge, design)
+result <- edgeR::glmQLFTest(fit, coef=2)
+```
+
+### Viewing edgeR Results
+
+```{r}
+knitr::kable(topTags(result))
+```
+
+## Exercise 4: Fixing a Terrible Mistake
+
+Inspect the initial results table returned by edgeR and function
+topTags.
+
+a)  According to the initial results, what genes are up-regulated? Write
+    your result without using code
+
+```{r}
+# Gene 1 is up-regulated on account of its positive logFC.
+```
+
+b)  According to the initial results, genes are down-regulated? Write
+    your result without using code
+
+```{r}
+# Gene 2 is down-regulated on account of its negative logFC.
+```
+
+c)  Compare this with what you expect by inspecting the initial count
+    matrix. Does this edgeR result make sense? Why not?
+
+```{r}
+# If Gene 1 was up-regulated and Gene 2 down-regulated, we'd expect to see larger counts for Gene 1 than Gene 2. However, our data shows the opposite. Gene 2 has higher counts than Gene 1. It doesn't make sense.
+```
+
+d)  How can this have happened? How can we fix it? Hint: although the
+    initial results are completely wrong, the mistake may not be so easy
+    to find ('deep bug'). The answer lies in the way the factor variable
+    'grouping' is ordered. edgeR looks at the order of the provided
+    factor variable for experiment groups and uses it to define up and
+    down-regulation. You can over-ride the default (alphabetical) order
+    of factors in R function `factor` used above by specifically
+    specifying the order of the factors using the parameter `levels`.
+
+```{r}
+# It appears that Edge R is defining up and down regulation based on the experimental data because it appears first in the list. This is not what we want. It should be defined based on the control data. We need to reorder the data so that the control groups come first.
+```
+
+e)  Implement the fix you identified in the previous step and rerun this
+    markdown file. Confirm that the edgeR results are now more in line
+    with what we expect by inspecting the count data.
+    
+```{r}
+# Reorder our groups
+grouping <- factor(df[['Group']], levels = c("Control","Case"))
+print(grouping)
+
+# Reorder our data
+count_dge <- edgeR::DGEList(counts=counts,group=grouping)
+count_dge
+
+# Rerun the Edge R stuff
+design <- model.matrix(~ grouping)
+eset_dge <- edgeR::estimateDisp(count_dge, design)
+fit <- edgeR::glmQLFit(eset_dge, design)
+result <- edgeR::glmQLFTest(fit, coef=2)
+
+# Make our table
+knitr::kable(topTags(result)) # Results now flip which is up or down regulated and make more sense.
+```
+
+f)  What work habits can help to prevent or identify code bugs that
+    dramatically impact results?
+
+```{r}
+# Always checking to make sure that data makes sense with what one expects. If we took the Edge R results at face value and did not compare to our counts, then we wouldn't have noticed our mistake.
+```
+
+## Exercise 5: Inspecting the Fixed edgeR Result
+
+Inspect the results table returned by edgeR and function topTags after
+you applied the code-fix.
+
+g)  What genes are up-regulated?
+
+```{r}
+# Gene 2 is up-regulated on account of its positive logFC.
+```
+
+h)  What genes are down-regulated?
+
+```{r}
+# Gene 1 is down-regulated on account of its negative logFC.
+```
+
+i)  What is the ratio of the mean expression of 'Case' experiments
+    divided by mean expression of 'Control' for Gene1? Hint: logFC
+    stands for the logarithm (base 2) of the fold change between
+
+```{r}
+# Fold change is our ratio between case and control.
+# All we need to do is undo log2.
+
+2^(-2.487220)
+
+# Our ratio is 0.1783496.
+```
+
+## Using DESeq2 instead of edgeR
+
+Now we will apply a different package for analyzing RNA-Seq data called
+DESeq2. The DESeq2 approach is based on the negative binomial
+distribution. Both the negative binomial distribution and the Poisson
+distribution are important tools for modeling count data, but they have
+different applications and assumptions. The Poisson distribution is
+appropriate when modeling events that occur at a fixed rate, while the
+negative binomial distribution is better suited for modeling events that
+occur randomly and exhibit overdispersion.
+
+One key difference between the two packages is that DESeq2 assumes that
+the variance and mean of the count data are related by a negative
+binomial distribution, while edgeR uses a more flexible approach that
+allows for gene-specific dispersion estimates. This can make edgeR more
+suitable for datasets with high levels of biological variability or low
+sequencing depth.
+
+Another difference is that DESeq2 is better suited for datasets with a
+large number of samples, while edgeR may be more appropriate for
+datasets with fewer samples. DESeq2 can also handle complex experimental
+designs, such as those involving multiple factors or time series data.
+
+```{r}
+# BiocManager::install('DESeq2')
+library("DESeq2")
+```
+
+The Interface of DESeq2 is slightly different compared to `edgeR`. As
+before we need to provide information about how the differernt
+experiments are grouped, but instead of a factor variable we have to
+provide a data frame, with the rownames corresponding to the experiment
+ids (equal to column names of the count data matrix) and one column
+containing the group-id name of the individual experiment.
+
+```{r}
+rownames(df) = df$ID
+knitr::kable(df)
+```
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = counts,
+                              colData = df,
+                              design = ~ Group)
+```
+
+### Perform Computation
+
+```{r run_deseq}
+dds <- DESeq(dds)
+print(dds)
+```
+
+## Exercise 6: Extract DESeq2 Results
+
+a)  apply the function `results` from package DESeq2 to the result
+    object (variable `dds`) created above. That function needs as first
+    argument the result object, and as second argument (called
+    'contrast') a character vector of length 3 with
+    
+    first element being
+    the column name containing the experiment group name,
+    
+    the second
+    element containing the group name corresponding to the treatment or
+    case, and
+    
+    the third element the character string corresponding to
+    the control experiment group name. Print the resulting data frame.
+
+```{r}
+contrast <- c("Group","Case","Control")
+dds_results <- results(dds, contrast)
+dds_results
+```
+
+b)  Post-process results. We want to filter out result rows where the
+    result is undefined ("NA") plus we want to sort by statistical
+    significance. When given the choice between a raw P-value and a
+    P-value that has been adjusted for multiple-testing correction, one
+    should choose the adjusted version. This column is called `Padj` in
+    case of the DESeq2 package and `FDR` (false discovery rate) in case
+    of the edgeR package.
+
+```{r}
+# Remove any NA data. (There is none?)
+dds_results <- na.omit(dds_results)
+
+# Sort by padj
+dds_results <- dds_results[order(dds_results$padj),]
+
+# Print
+dds_results
+```
+
+c)  By what factor are genes Gene1 and Gene2 up or down-regulated?
+
+```{r}
+# Fold change is our ratio between case and control.
+# All we need to do is undo log2.
+
+2^(-1.94404) # Gene 1, factor of 0.25.
+2^(2.06329) # Gene 2, factor of 4.
+```
+
+d)  Compare the results from edgeR and DESeq2. Both are respected
+    approaches for RNA-Seq data normalization and analysis. Are the
+    results very similar? What does that mean in practice about your
+    data analysis?
+
+```{r}
+# Here are the results from Edge R.
+
+2^(-2.487220) # Gene 1, factor of 0.17.
+2^(1.438682) # Gene 2, factor of 2.7.
+
+# When compared with the results from the DESeq, they are substantially different. In practice, this means the approach  taken may matter significantly. We should try to understand the differences between approaches choose what is best based on the data and goals of the study.
+```

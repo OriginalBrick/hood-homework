@@ -1,0 +1,128 @@
+J. Jedediah Smith
+BIFX 530
+SQL Lab 1
+10/6/2022
+
+Consider the banking schema below:
+	branch (branch_name, branch_city, assets)
+	customer (customer_name, customer_street, customer_city)
+	account (account_number, branch_name, balance)
+	loan (loan_number, branch_name, amount)
+	depositor (customer_name, account_number)
+	borrower (customer_name, loan_number)
+Write and execute the following queries in SQL:
+
+
+1. Find the names of customers who live in cities with names ending in “on”.
+MariaDB [jjs14db]> SELECT customer_name
+    -> FROM customer
+    -> WHERE customer_city LIKE '%on';
++---------------+
+| customer_name |
++---------------+
+| Hayes         |
+| Jones         |
+| Williams      |
++---------------+
+3 rows in set (0.00 sec)
+
+
+2. Find the names and cities of customers who have an account at “Downtown” branch.
+MariaDB [jjs14db]> SELECT customer.customer_name, customer_city
+    -> FROM customer, depositor, account
+    -> WHERE customer.customer_name = depositor.customer_name AND depositor.account_number = account.account_number AND account.branch_name = "Downtown";
++---------------+---------------+
+| customer_name | customer_city |
++---------------+---------------+
+| Hayes         | Harrison      |
+| Johnson       | Palo Alto     |
++---------------+---------------+
+2 rows in set (0.00 sec)
+
+
+3. Print in descending order the names of customers who have a loan amount between 1000 and 2000.
+MariaDB [jjs14db]> SELECT customer.customer_name
+    -> FROM customer, borrower, loan
+    -> WHERE customer.customer_name = borrower.customer_name AND borrower.loan_number = loan.loan_number AND loan.amount BETWEEN 1000 AND 2000
+    -> ORDER BY customer.customer_name DESC;
++---------------+
+| customer_name |
++---------------+
+| Williams      |
+| Smith         |
+| Jones         |
+| Jackson       |
+| Hayes         |
+| Adams         |
++---------------+
+6 rows in set (0.00 sec)
+
+
+4. Find the names of branches with average branch balance above 700.
+MariaDB [jjs14db]> SELECT branch_name
+    -> FROM account
+    -> GROUP BY branch_name
+    -> HAVING AVG(balance) > 700;
++-------------+
+| branch_name |
++-------------+
+| Brighton    |
+| Central     |
++-------------+
+2 rows in set (0.00 sec)
+
+
+5. Find all customers who have a loan, an account, or both.
+MariaDB [jjs14db]> SELECT DISTINCT customer.*
+    -> FROM customer, borrower, depositor
+    -> WHERE customer.customer_name = borrower.customer_name OR customer.customer_name = depositor.customer_name;
++---------------+-----------------+---------------+
+| customer_name | customer_street | customer_city |
++---------------+-----------------+---------------+
+| Adams         | Spring          | Pittsfield    |
+| Hayes         | Main            | Harrison      |
+| Curry         | North           | Rye           |
+| Jackson       | University      | Salt Lake     |
+| Jones         | Main            | Harrison      |
+| McBride       | Safety          | Rye           |
+| Smith         | Main            | Rye           |
+| Williams      | Nassau          | Princeton     |
+| Johnson       | Alma            | Palo Alto     |
+| Lindsay       | Park            | Pittsfield    |
+| Majeris       | First           | Rye           |
+| Turner        | Putnam          | Stamford      |
++---------------+-----------------+---------------+
+12 rows in set (0.01 sec)
+
+
+6. Find the average account balance at the “Perryridge” branch.
+MariaDB [jjs14db]> SELECT AVG(balance)
+    -> FROM account
+    -> GROUP BY branch_name
+    -> HAVING branch_name = "Perryridge";
++--------------+
+| AVG(balance) |
++--------------+
+|   650.000000 |
++--------------+
+1 row in set (0.01 sec)
+
+
+7. Find the number of depositors for each branch.
+MariaDB [jjs14db]> SELECT account.branch_name, COUNT(depositor.customer_name)
+    -> FROM account, depositor
+    -> WHERE account.account_number = depositor.account_number
+    -> GROUP BY account.branch_name;
++-------------+--------------------------------+
+| branch_name | COUNT(depositor.customer_name) |
++-------------+--------------------------------+
+| Brighton    |                              1 |
+| Central     |                              1 |
+| Downtown    |                              2 |
+| Mianus      |                              1 |
+| North Town  |                              1 |
+| Perryridge  |                              2 |
+| Redwood     |                              1 |
+| Round Hill  |                              1 |
++-------------+--------------------------------+
+8 rows in set (0.00 sec)

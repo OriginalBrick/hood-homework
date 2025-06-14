@@ -1,0 +1,291 @@
+---
+title: "Midterm 2 - BIFX553"
+date: "2023-04-19"
+output:
+  word_document: default
+  html_document: default
+---
+
+Name: J. Jedediah Smith
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+## Exercise 1: Pattern matching
+
+Let there be a DNA sequence (stored in R variable `dna`). You are asked to find all occurrences of a certain sequence motif (TAGCTG, stored in R variable `motif`).
+
+```{r}
+dna = "GCAGCTAATCGAGTAGCTAGCTGACCTTAGCGTAGCGTGGATCCCGGTTACCGCGTAGCTGACCTTAGCGTAGCGTAGCTGACCTTAGCGTAGCGTAGCTGACCTTAGC"
+motif = "TAGCTG"
+```
+
+a)  Use R code and a text based approach from R package `stringr` that locates all (that was a hint) occurrences of the motif in the longer sequence. Write the code that prints the result to the document.
+
+```{r}
+library(stringr)
+str_locate_all(dna, motif)
+```
+
+b)  Use the function `matchPattern` from R/Bioconductor package Biostrings to find all patterns.
+
+```{r}
+library(Biostrings)
+matchPattern(motif,dna)
+```
+
+c)  Use the function `matchPDict` from the Biostrings package to achieve the same result of all matches.
+
+```{r}
+# Properly define our variables, otherwise PDict gets angry.
+motif_pd <- PDict(motif)
+dna_str <- DNAString(dna)
+
+# Find matches with PDict.
+unlist(matchPDict(motif_pd,dna_str))
+```
+
+You implemented 3 different ways to find pattern matches in a DNA sequence. Shockingly, depending on the biological question, all 3 implemented approaches are not entirely correct! Why? Because in many situations, DNA sequence fragments such as reads from a high-throughput experiment are derived either the forward or reverse strand of the source DNA. The genomic reference sequences store only the forward strand information - because the reverse strand can be easily derived from the forward strand by computing the reverse-complement. An added challenge is that none of the 3 approaches used above has an easy option to find both forward and reverse matches. Instead we have to explicitly program that. Fortunately, Biostrings has the function `reverseComplement` with which we can compute the reverse complement of sequences and they launch an additional search with them.
+
+d)  Use the function reverseComplement, to compute the reverse complement sequence from out short DNA motif (TAGCTG). Hint: that function may not work directly with R character strings, the motif may have to be converted to a proper data structure before using the function `reverseComplement`.
+
+```{r}
+# Already made dna a DNAString for question 1c.
+dnarc_str <- reverseComplement(dna_str)
+dnarc_str
+```
+
+e)  Apply functions `PDict` and `matchPDict` to find all matches of the reverse complement of that initial motif.
+
+```{r}
+# Already made motif a PDict for question 1c.
+unlist(matchPDict(motif_pd,dnarc_str))
+```
+
+f)  Discuss if this needed extra step for finding reverse complements matches is common in bioinformatics (list at least 2 experimental techniques where it occurs) and suggest ways that help you remember that in future projects.
+
+    Reverse complements can be used in two important places:
+
+    -   The creation of libraries for Next Generation Sequencing
+
+    -   The translation of DNA into proteins
+
+    Perhaps a way to remember this would be to always generate the reverse complement, even when it might not be necessary. That way, one would always be reminded to check whether it is needed.
+
+## Exercise 2: Count Matrices
+
+Many types of high-throughput experiments can be reduced to the analysis of different types of counts of reads matching a certain genomic DNA or RNA transcript regions. When combining this with different experimental conditions, one obtains a matrix where rows correspond to genes or transcripts and columns correspond to the different experiments that have been performed.
+
+a)  Discuss under what circumstances the Poisson distribution is a good model for counts.
+
+    For examples or small sets of data that lack large amounts of variation, Poisson works fine. However, it makes a lot of assumptions, such as independence and mean = variance.
+
+b)  Discuss under what circumstances the negative binomial distribution is a better model for count data compared to the Poisson distribution.
+
+    With larger more varied sets of data, negative binomial is better. It is similar to Poisson, but there are more settings to play with and is not as constrained by mean and variance assumptions.
+
+## Exercise 3: Differential Gene Expression
+
+A Biotech company was founded on the premise that its founders previously identified 3 different genes whose expression on the RNA and protein level are associated with kidney cancer progression. They also claim that a novel drug treatment will change the expression of these genes.
+
+To verify those claims, RNA-Seq experiments were performed with and without the drug treatment. You obtain results for 4 repeats of RNA-Seq corresponding to the drug treatment, and 3 repeated results corresponding to no treatment (negative control).
+
+Assume you have the following count data matrix, where the first 4 columns corresponding to the drug treatment, and the last 3 columns correspond to the negative control. The 3 genes in question are called here X, Y and Z.
+
+```{r}
+library(edgeR)
+# library(dplyr)
+options(warn=-1)
+countm = matrix(0, nrow=3, ncol=7)
+rownames(countm) = c("X", "Y", "Z")
+colnames(countm) = c("Treatment1", "Treatment2", "Treatment3", "Treatment4",
+                     "Control1", "Control2", "Control3")
+countm["X",] = c(22,	9,	17,	2,	90,	59,	96)  # counts for Gene1
+countm["Y",] = c(77,	61,	81,	104,	28,	36,	32)  # counts for Gene2
+countm["Z",] = c(56,	61,	59,	67,	58,	57,	64)  # counts for Gene3
+knitr::kable(countm)
+```
+
+Counts of reads detected in an RNA-Seq experiment matching its transcript sequences are given the corresponding row in above matrix stored in a variable with name `countm`.
+
+a)  For each gene X, Y, Z, Use a 2-sample t-test comparing the 4 values corresponding to the treatment to the 3 values corresponding to the control. Write code that prints the P-value of the t-test for each row of the matrix.
+
+```{r}
+x_test <- t.test(countm[1,1:4], countm[1,5:7])
+x_test$p.value
+
+y_test <- t.test(countm[2,1:4], countm[2,5:7])
+y_test$p.value
+
+z_test <- t.test(countm[3,1:4], countm[3,5:7])
+z_test$p.value
+```
+
+b)  This row-wise t-test is indeed used for same types experiments. But for assessing differential gene expression via RNA-Seq data the 2-sample t-test may not be ideal because some assumptions about its data are not well fulfilled. Discuss why the t-test may be an approximation but may not be ideal for RNA-Seq experiments.
+
+    The biggest problem I see is that t-tests assume individual outcomes are statistically independent. But that couldn't be further from the truth with something like genetics, where the values of certain genes are often dependent on those of another. It is still a useful tool to quickly gauge the effectiveness of something, but further analysis should be conducted.
+
+c)  Using the R package `edgeR`, use the functions `estimateDisp`, `glmQLFit` and `glmQLFTest` as shown in the prior homework to compute the estimated differential expression of genes X,Y and Z. Use the function `topTags` to print the results.
+
+```{r}
+library(edgeR)
+
+# Get the count table set up.
+counts = matrix(0, nrow=3, ncol=7)
+rownames(counts) = c("GeneX", "GeneY", "GeneZ")
+colnames(counts) = c("Case1", "Case2", "Case3", "Case4",
+                     "Control1", "Control2", "Control3")
+counts["GeneX",] = countm[1,1:7]
+counts["GeneY",] = countm[2,1:7]
+counts["GeneZ",] = countm[3,1:7]
+
+knitr::kable(counts)
+
+# Get the data frame set up.
+df = tibble::tibble(
+  ID=c("Case1","Case2","Case3","Case4","Control1","Control2","Control3"),
+  Group=c("Case","Case","Case","Case","Control","Control","Control")
+)
+
+knitr::kable(df)
+
+# Set up factor levels in the right order.
+grouping <- factor(df[["Group"]], levels = c("Control","Case"))
+
+# Get the inputs formatted for edgeR.
+count_dge <- edgeR::DGEList(counts=counts,group=grouping)
+design <- model.matrix(~ grouping)
+
+# Run the edgeR stuff.
+eset_dge <- edgeR::estimateDisp(count_dge, design)
+fit <- edgeR::glmQLFit(eset_dge, design)
+result <- edgeR::glmQLFTest(fit, coef=2)
+
+knitr::kable(topTags(result))
+```
+
+d)  What are the estimated fold-changes of the 3 genes? (not the logarithm of the fold changes)
+
+```{r}
+# Fold Change in X, Y, Z order.
+2^result$table$logFC
+```
+
+## Exercise 4: Information Theory and Sequence Logos
+
+You obtain evidence about an important DNA motif associated with binding of a novel transcription factor.
+
+```{r}
+logoseqs <- c("ATGCAAGTCA",
+              "ATGGAAGTCT",
+              "ATGCAAGTCA",
+              "ATGTAAGTCA",
+              "ATGCAAGGCA",
+              "ATGCAAGTGA",
+              "ATGAAAGTCA",
+              "ATGCAAGTCA",
+              "ATGCTAGTCA",
+              "ATGCAAGTCA")
+```
+
+a)  Use R package ggseqlogo to display the sequence logo of these DNA fragments.
+
+```{r}
+library(ggseqlogo)
+ggseqlogo(logoseqs)
+```
+
+b)  Which position is least likely to be important for protein binding?
+
+    Position 4, on account of the fact that it as not as conserved as the other positions.
+
+The R package `ggseqlogo` is not so helpful when it comes to computing non-graphical numeric values such as information content. Let us try an alternative Bioconductor package called `seqLogo`. We are using Biostrings function `consensusMatrix` to count the occurrences of each nucleotide at each position.
+
+```{r}
+# BiocManager::install("seqLogo")
+library(seqLogo)
+dna_seqs <- DNAStringSet(logoseqs)
+nucleotide_counts_raw <- consensusMatrix(dna_seqs, baseOnly = TRUE)
+nucleotide_counts=nucleotide_counts_raw[rownames(nucleotide_counts_raw) != "other",] # not needed here
+nucleotide_counts
+```
+
+This is the position specific count matrix, that shows how many times a certain nucleotide was observed at a certain position for the provided sequences.
+
+c)  Write code that converts the raw counts in variable `nucleotide_counts` into probabilities (the probability that a randomly chosen sequence at a certain position is a certain nucleotide). Store the result in variable pwm0 and print.
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+nucleotide_counts <- as.data.frame(nucleotide_counts)
+
+pwm0 <- nucleotide_counts %>%
+  mutate(across(everything(), ~ . / 10))
+pwm0
+```
+
+d)  Write code that converts the raw counts in variable `nucleotide_counts` into probabilities like before but with the difference that a pseudocount of value 1 was used. Store the result in variable pwm1 and print.
+
+```{r}
+pwm1 <- nucleotide_counts %>%
+  mutate(across(everything(), ~ . +1)) %>%
+  mutate(across(everything(), ~ . / 11))
+pwm1
+```
+
+e)  Display the sequence logo of the first case without pseudo-count (variable pwm0) using the function `seqLogo` from the R package `seqLogo`. Hint: before called the function `seqLogo`, our matrix of probabilities per position (a position-specific weight matrix of PWM) has to be converted into a format specific to the `seqLogo` package using its function `seqLogo::makePWM(...)`
+
+```{r}
+pwm0 <- makePWM(pwm0, alphabet = "DNA")
+seqLogo(pwm0)
+```
+
+f)  Display the sequence logo of the second case with pseudo-count (variable pwm1) using the function `seqLogo` from the R package `seqLogo`.
+
+```{r}
+pwm1 <- makePWM(pwm1, alphabet = "DNA")
+seqLogo(pwm1)
+```
+
+g)  Using the option `ic.scale=FALSE`, plot the sequence logo of pwm0 as probability instead of information content:
+
+```{r}
+seqLogo(pwm0, ic.scale=FALSE)
+```
+
+h)  Using the option `ic.scale=FALSE`, plot the sequence logo of pwm1 as probability instead of information content:
+
+```{r}
+seqLogo(pwm1, ic.scale=FALSE)
+```
+
+i)  Using the function `seqLogo::ic()` one can compute the information content of each position of the position specific weight matrix. Compute this vector of numbers using the `ic` function applied to the pwm0b variable. Compute and print the sum of these information content values.
+
+```{r}
+pwm0b <- ic(pwm0)
+pwm0b
+```
+
+j)  Using the function `seqLogo::ic()` one can compute the information content of each position of the position specific weight matrix. Compute this vector of numbers using the `ic` function applied to the pwm1b variable. Compute and print the sum of these information content values.
+
+```{r}
+pwm1b <- ic(pwm1)
+pwm1b
+```
+
+k)  If IC is the total information content of a sequence logo, it is expected to occur every $2^{IC}$ positions by chance. Compute the probabilities that our sequence motif occurs by chance at a certain position using variable `pwm0b` as well as `pwm1b`.
+
+```{r}
+1/(2^pwm0b)
+1/(2^pwm1b)
+```
+
+l)  Discuss the differences in sequence logo and total information content between our 2 different versions - with and without pseudo-counts as reflected in variables pwm0 and pwm1. Which version is more "conservative" in the sense that it makes less strong claims about an identified logo?
+
+    The more conservative option is pwm1 because it claims to have a higher chance of getting the indicated results by coincidence. It is attributing less confidence to the results.
+
+m)  Discuss the advantages and disadvantages of displaying the sequence logo in terms of information content or alternatively in terms of probability.
+
+    Using probability makes it easier for the average person to wrap their head around and thus improves the readability of a given visualization. However, information content is more technically correct, and may be better suited for a knowledgeable audience, or when the output will be further processed.

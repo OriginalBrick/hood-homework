@@ -1,0 +1,109 @@
+J. Jedediah Smith
+BIFX 530
+SQL Lab 2
+10/13/2022
+
+Consider the banking schema below:
+	branch (branch_name, branch_city, assets)
+	customer (customer_name, customer_street, customer_city)
+	account (account_number, branch_name, balance)
+	loan (loan_number, branch_name, amount)
+	depositor (customer_name, account_number)
+	borrower (customer_name, loan_number)
+Write and execute the following queries in SQL:
+
+
+1. Find all customers who have both an account and a loan at the bank.
+
+MariaDB [jjs14db]> SELECT DISTINCT customer.*
+    -> FROM customer
+    -> NATURAL JOIN borrower
+    -> NATURAL JOIN depositor;
++---------------+-----------------+---------------+
+| customer_name | customer_street | customer_city |
++---------------+-----------------+---------------+
+| Hayes         | Main            | Harrison      |
+| Jones         | Main            | Harrison      |
+| Smith         | Main            | Rye           |
++---------------+-----------------+---------------+
+3 rows in set (0.00 sec)
+
+
+2. Find the names of customers with accounts at a branch where Hayes has an account.
+
+MariaDB [jjs14db]> SELECT DISTINCT customer.customer_name
+    -> FROM customer
+    -> INNER JOIN depositor ON customer.customer_name = depositor.customer_name
+    -> INNER JOIN account ON depositor.account_number = account.account_number
+    -> WHERE account.branch_name = some
+    -> (SELECT account.branch_name
+    -> FROM account
+    -> INNER JOIN depositor ON depositor.account_number = account.account_number
+    -> INNER JOIN customer ON depositor.customer_name = customer.customer_name
+    -> WHERE customer.customer_name = "Hayes");
++---------------+
+| customer_name |
++---------------+
+| Hayes         |
+| Johnson       |
++---------------+
+2 rows in set (0.00 sec)
+
+
+3. Find the names of customers with an account but not a loan at Perryridge branch.
+
+MariaDB [jjs14db]> SELECT DISTINCT c1.customer_name
+    -> FROM customer c1
+    -> INNER JOIN depositor ON c1.customer_name = depositor.customer_name
+    -> INNER JOIN account ON depositor.account_number = account.account_number
+    -> WHERE account.branch_name = "Perryridge" AND NOT EXISTS
+    -> (SELECT *
+    -> FROM customer c2
+    -> INNER JOIN borrower ON c2.customer_name = borrower.customer_name
+    -> INNER JOIN loan ON borrower.loan_number = loan.loan_number
+    -> WHERE loan.branch_name = "Perryridge" AND c1.customer_name = c2.customer_name);
++---------------+
+| customer_name |
++---------------+
+| Johnson       |
++---------------+
+1 row in set (0.00 sec)
+
+
+4. Find all branches that have greater assets than some branch located in Brooklyn.
+
+MariaDB [jjs14db]> SELECT DISTINCT branch_name
+    -> FROM branch
+    -> WHERE assets > some
+    -> (SELECT assets
+    -> FROM branch
+    -> WHERE branch_city = "Brooklyn");
++-------------+
+| branch_name |
++-------------+
+| Brighton    |
+| North Town  |
+| Perryridge  |
+| Redwood     |
+| Round Hill  |
++-------------+
+5 rows in set (0.00 sec)
+
+
+5. Find the name and average balance for customers who live in Harrison and have at least 2
+accounts.
+
+MariaDB [jjs14db]> SELECT customer.customer_name, avg(account.balance)
+    -> FROM customer
+    -> INNER JOIN depositor ON customer.customer_name = depositor.customer_name
+    -> INNER JOIN account ON depositor.account_number = account.account_number
+    -> WHERE customer.customer_city = "Harrison"
+    -> GROUP BY customer.customer_name
+    -> HAVING count(customer.customer_name) > 1;
++---------------+----------------------+
+| customer_name | avg(account.balance) |
++---------------+----------------------+
+| Hayes         |           450.000000 |
++---------------+----------------------+
+1 row in set (0.00 sec)
+
